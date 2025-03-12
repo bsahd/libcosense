@@ -74,23 +74,25 @@ export class Project extends CosenseClient {
 
 	/** create a project reader */
 	static async new(
-		projectName:string,
-		options: {	/**
-			* This option only works in runtime other than a browser.
-			*/
-		   sessionid?: string;
-		   /**
-			* in runtime other than a browser, requires sessionid.
-			* if is undefined, is means false.
-			*/
-		   allowediting?: boolean;
-		   /**
-			* if not undefined, use alternativeFetch instead of fetch
-			*/
-		   alternativeFetch?: (
-			   input: RequestInfo | URL,
-			   init?: RequestInit,
-		   ) => Promise<Response>;},
+		projectName: string,
+		options: {
+			/**
+			 * This option only works in runtime other than a browser.
+			 */
+			sessionid?: string;
+			/**
+			 * in runtime other than a browser, requires sessionid.
+			 * if is undefined, is means false.
+			 */
+			allowediting?: boolean;
+			/**
+			 * if not undefined, use alternativeFetch instead of fetch
+			 */
+			alternativeFetch?: (
+				input: RequestInfo | URL,
+				init?: RequestInit,
+			) => Promise<Response>;
+		},
 	): Promise<Project> {
 		const projectInfomation = await fetch(
 			"https://scrapbox.io/api/projects/" +
@@ -105,7 +107,7 @@ export class Project extends CosenseClient {
 			throw new Error(await projectInfomation.text());
 		}
 		return new Project(
-			{...options,projectName},
+			{ ...options, projectName },
 			await projectInfomation.json(),
 		);
 	}
@@ -123,22 +125,25 @@ export class Project extends CosenseClient {
 	async *pageList(): AsyncGenerator<PageListItem, void, unknown> {
 		let followId: string | null = null;
 		while (true) {
-			const partialPageListResponse: PageListItem[] = await (await this.fetch(
-				"https://scrapbox.io/api/pages/" +
-					this.name + "/search/titles" +
-					(followId ? "?followingId=" + followId : ""),
-			)).json();
+			const partialPageListResponse: PageListItem[] =
+				await (await this.fetch(
+					"https://scrapbox.io/api/pages/" +
+						this.name + "/search/titles" +
+						(followId ? "?followingId=" + followId : ""),
+				)).json();
 			if (partialPageListResponse.length < 2) {
 				return;
 			}
-			followId = partialPageListResponse[partialPageListResponse.length - 1].id;
+			followId =
+				partialPageListResponse[partialPageListResponse.length - 1].id;
 			for (const e of partialPageListResponse) {
-				yield new PageListItem({
-					...e,
-					options: this,
-				});
+				yield new PageListItem(e, this);
 			}
 		}
+	}
+
+	latestPages(options: LatestPagesInit) {
+		return LatestPages.new(options, this);
 	}
 
 	/** get single page */
@@ -148,6 +153,78 @@ export class Project extends CosenseClient {
 
 	search(query: string): Promise<SearchResult> {
 		return SearchResult.new(query, this);
+	}
+}
+export interface LatestPagesInit {
+	limit?: number;
+	skip?: number;
+	sort:
+		| "updated"
+		| "created"
+		| "accessed"
+		| "linked"
+		| "views"
+		| "title"
+		| "updatedbyMe";
+}
+export class LatestPagesPage extends CosenseClient {
+	id!: string;
+	title!: string;
+	image!: string | null;
+	descriptions!: string[];
+	user!: { id: string };
+	pin!: number; // pinされてないときは0
+	views!: number;
+	linked!: number;
+	commitId!: string;
+	created!: number;
+	updated!: number;
+	accessed!: number;
+	lastAccessed?: number;
+	snapshotCreated!: number | null;
+	pageRank!: number;
+	/** internal use only */
+	constructor(init: LatestPagesPage, super2: CosenseClient) {
+		super(super2);
+		Object.assign(this, init);
+	}
+
+	getDetail(): Promise<Page> {
+		return Page.new(this.title, this);
+	}
+}
+export class LatestPages extends CosenseClient {
+	skip!: number; // parameterに渡したskipと同じ
+	limit!: number; // parameterに渡したlimitと同じ
+	count!: number; // projectの全ページ数 (中身のないページを除く)
+	pages: LatestPagesPage[];
+	static async new(
+		options: LatestPagesInit,
+		super2: CosenseClient,
+	): Promise<LatestPages> {
+		return new LatestPages(
+			await (await super2.fetch(
+				"https://scrapbox.io/api/pages/" +
+					super2.projectName + "/?" +
+					options.limit
+					? "limit=" + options.limit + "&"
+					: "" +
+							options.skip
+					? "skip=" + options.skip + "&"
+					: "" +
+							options.sort
+					? "sort=" + options.sort + "&"
+					: "",
+			)).json(),
+			super2,
+		);
+	}
+	private constructor(init: LatestPages, super2: CosenseClient) {
+		super(super2);
+		Object.assign(this, init);
+		this.pages = init.pages.map((a) => {
+			return new LatestPagesPage(a, this);
+		});
 	}
 }
 
@@ -192,14 +269,8 @@ export class PageListItem extends CosenseClient {
 	links!: string[];
 	updated!: number;
 	/** internal use only */
-	constructor(init: {
-		id: string;
-		title: string;
-		links: string[];
-		updated: number;
-		options: CosenseClient;
-	}) {
-		super(init.options);
+	constructor(init: PageListItem, super2: CosenseClient) {
+		super(super2);
 		Object.assign(this, init);
 	}
 
