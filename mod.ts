@@ -1,5 +1,3 @@
-// deno-lint-ignore-file no-inner-declarations no-var
-
 export interface CosenseConstructorOptions {
 	/** Project name on cosense */
 	projectName: string;
@@ -94,7 +92,7 @@ export class Project extends CosenseClient {
 			   init?: RequestInit,
 		   ) => Promise<Response>;},
 	): Promise<Project> {
-		var a = await fetch(
+		const projectInfomation = await fetch(
 			"https://scrapbox.io/api/projects/" +
 				encodeURIComponent(projectName),
 			options?.sessionid
@@ -103,12 +101,12 @@ export class Project extends CosenseClient {
 				}
 				: {},
 		);
-		if (!a.ok) {
-			throw new Error(await a.text());
+		if (!projectInfomation.ok) {
+			throw new Error(await projectInfomation.text());
 		}
 		return new Project(
 			{...options,projectName},
-			await a.json(),
+			await projectInfomation.json(),
 		);
 	}
 
@@ -123,18 +121,18 @@ export class Project extends CosenseClient {
 
 	/** asyncgenerator for all pages list */
 	async *pageList(): AsyncGenerator<PageListItem, void, unknown> {
-		var followId: string | null = null;
+		let followId: string | null = null;
 		while (true) {
-			var res: PageListItem[] = await (await this.fetch(
+			const partialPageListResponse: PageListItem[] = await (await this.fetch(
 				"https://scrapbox.io/api/pages/" +
 					this.name + "/search/titles" +
 					(followId ? "?followingId=" + followId : ""),
 			)).json();
-			if (res.length < 2) {
+			if (partialPageListResponse.length < 2) {
 				return;
 			}
-			followId = res[res.length - 1].id;
-			for (const e of res) {
+			followId = partialPageListResponse[partialPageListResponse.length - 1].id;
+			for (const e of partialPageListResponse) {
 				yield new PageListItem({
 					...e,
 					options: this,
@@ -199,7 +197,7 @@ export class PageListItem extends CosenseClient {
 		title: string;
 		links: string[];
 		updated: number;
-		options: CosenseConstructorOptions;
+		options: CosenseClient;
 	}) {
 		super(init.options);
 		Object.assign(this, init);
