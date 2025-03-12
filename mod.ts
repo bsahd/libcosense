@@ -142,7 +142,7 @@ export class Project extends CosenseClient {
 		}
 	}
 
-	latestPages(options: LatestPagesInit) {
+	latestPages(options: LatestPagesInit):Promise<LatestPages> {
 		return LatestPages.new(options, this);
 	}
 
