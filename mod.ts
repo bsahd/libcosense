@@ -97,7 +97,6 @@ export class Project extends CosenseClient {
 					this.name + "/search/titles" +
 					(followId ? "?followingId=" + followId : ""),
 			)).json();
-			console.log(res);
 			if (res.length < 2) {
 				return;
 			}
