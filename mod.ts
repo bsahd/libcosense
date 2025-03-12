@@ -1,6 +1,5 @@
 // deno-lint-ignore-file no-inner-declarations no-var
 
-
 export interface CosenseConstructorOptions {
 	/**
 	 * This option only works in runtime other than a browser.
@@ -12,12 +11,16 @@ export interface CosenseConstructorOptions {
 	allowediting: boolean;
 }
 
+/** base cosense client class */
 export class CosenseClient {
 	options: CosenseConstructorOptions;
-	projectName:string;
-	protected constructor(projectName:string,options: CosenseConstructorOptions) {
+	projectName: string;
+	protected constructor(
+		projectName: string,
+		options: CosenseConstructorOptions,
+	) {
 		this.options = options;
-		this.projectName=projectName;
+		this.projectName = projectName;
 	}
 	async fetch(url: string, options?: RequestInit): Promise<Response> {
 		return await fetch(
@@ -33,6 +36,8 @@ export class CosenseClient {
 		);
 	}
 }
+
+/** cosense project */
 export class Project extends CosenseClient {
 	id!: string;
 	name: string;
@@ -48,7 +53,8 @@ export class Project extends CosenseClient {
 	created!: number;
 	updated!: number;
 	isMember!: boolean;
-	
+
+	/** create a project reader */
 	static async new(
 		projectName: string,
 		options?: CosenseConstructorOptions,
@@ -71,16 +77,18 @@ export class Project extends CosenseClient {
 			await a.json(),
 		);
 	}
-	
+
 	private constructor(
 		name: string,
 		options: CosenseConstructorOptions,
 		projectInfo: Project,
 	) {
-		super(name,options);
+		super(name, options);
 		this.name = name;
 		Object.assign(this, projectInfo);
 	}
+
+	/** asyncgenerator for all pages list */
 	async *pageList(): AsyncGenerator<PageListItem, void, unknown> {
 		var followId: string | null = null;
 		while (true) {
@@ -103,8 +111,49 @@ export class Project extends CosenseClient {
 			}
 		}
 	}
-	getPage(pageName:string):Promise<Page>{
-		return Page.new(this.projectName,pageName,this)
+
+	/** get single page */
+	getPage(pageName: string): Promise<Page> {
+		return Page.new(this.projectName, pageName, this);
+	}
+
+	search(query: string): Promise<SearchResult> {
+		return SearchResult.new(query, this);
+	}
+}
+
+class SearchResult extends CosenseClient {
+	searchQuery!: string; // 検索語句
+	query!: {
+		words: string[]; // AND検索に使った語句
+		excludes: string[];
+	};
+	limit!: number; // 検索件数の上限
+	count!: number; // 検索件数
+	existsExactTitleMatch!: boolean; // 詳細不明
+	backend!: "elasticsearch";
+	pages!: {
+		id: string;
+		title: string;
+		image: string; // 無いときは''になる
+		words: string[];
+		lines: string[];
+	}[];
+	static async new(
+		query: string,
+		super2: CosenseClient,
+	): Promise<SearchResult> {
+		return new SearchResult(
+			await (await super2.fetch(
+				"https://scrapbox.io/api/pages/" + super2.projectName +
+					"/search/query?q=" + encodeURIComponent(query),
+			)).json(),
+			super2,
+		);
+	}
+	constructor(init: SearchResult, super2: CosenseClient) {
+		super(super2.projectName, super2.options);
+		Object.assign(this, init);
 	}
 }
 
@@ -113,7 +162,7 @@ export class PageListItem extends CosenseClient {
 	title!: string;
 	links!: string[];
 	updated!: number;
-
+	/** internal use only */
 	constructor(init: {
 		id: string;
 		title: string;
@@ -122,64 +171,64 @@ export class PageListItem extends CosenseClient {
 		options: CosenseConstructorOptions;
 		project: string;
 	}) {
-		super(init.project,init.options);
-		Object.assign(this, init); 
+		super(init.project, init.options);
+		Object.assign(this, init);
 	}
 
-	getDetail():Promise<Page> {
-		return Page.new(this.projectName,this.title,this)
+	getDetail(): Promise<Page> {
+		return Page.new(this.projectName, this.title, this);
 	}
 }
 
-export class Page extends CosenseClient{
-	id!: string; 
-	title!: string; 
-	image!: string; 
-	descriptions!: string[]; 
-	pin!: 0 | 1; 
-	views!: number; 
-	linked!: number; 
-	commitId?: string; 
-	created!: number; 
-	updated!: number; 
-	accessed!: number; 
-	lastAccessed!: number | null; 
-	snapshotCreated!: number | null; 
-	snapshotCount!: number; 
-	pageRank!: number; 
-	persistent!: boolean; 
+export class Page extends CosenseClient {
+	id!: string;
+	title!: string;
+	image!: string;
+	descriptions!: string[];
+	pin!: 0 | 1;
+	views!: number;
+	linked!: number;
+	commitId?: string;
+	created!: number;
+	updated!: number;
+	accessed!: number;
+	lastAccessed!: number | null;
+	snapshotCreated!: number | null;
+	snapshotCount!: number;
+	pageRank!: number;
+	persistent!: boolean;
 	lines!: {
-		id: string; 
-		text: string; 
-		userId: string; 
-		created: number; 
+		id: string;
+		text: string;
+		userId: string;
+		created: number;
 		updated: number;
 	}[];
-	links!: string[]; 
-	icons!: string[]; 
-	files!: string[]; 
+	links!: string[];
+	icons!: string[];
+	files!: string[];
 	relatedPages!: {
 		links1hop: {
-			id: string; 
-			title: string; 
+			id: string;
+			title: string;
 			titleLc: string;
-			image: string; 
-			descriptions: string[]; 
+			image: string;
+			descriptions: string[];
 			linksLc: string[];
-			linked: number; 
-			updated: number; 
-			accessed: number; 
+			linked: number;
+			updated: number;
+			accessed: number;
 		}[];
 		links2hop: {
-			id: string; 
-			title: string; 
+			id: string;
+			title: string;
 			titleLc: string;
-			image: string; 
-			descriptions: string[]; 
-			linksLc: string[]; 
-			linked: number; 
-			updated: number; 
-			accessed: number; 
+			image: string;
+			descriptions: string[];
+			linksLc: string[];
+			linked: number;
+			updated: number;
+			accessed: number;
 		}[];
 		hasBackLinksOrIcons: boolean;
 	};
@@ -195,17 +244,27 @@ export class Page extends CosenseClient{
 		displayName: string;
 		photo: string;
 	}[];
-	static async new(projectName:string,pageName:string,options:CosenseClient):Promise<Page>{
+	static async new(
+		projectName: string,
+		pageName: string,
+		options: CosenseClient,
+	): Promise<Page> {
 		return new Page(
 			await (await options.fetch(
 				`https://scrapbox.io/api/pages/${projectName}/${
 					encodeURIComponent(pageName)
 				}`,
-			)).json(),projectName,options
+			)).json(),
+			projectName,
+			options,
 		);
 	}
-	private constructor(init: Page,projectName:string,options:CosenseClient) {
-		super(projectName,options.options)
+	private constructor(
+		init: Page,
+		projectName: string,
+		options: CosenseClient,
+	) {
+		super(projectName, options.options);
 		Object.assign(this, init);
 	}
 }
@@ -214,4 +273,4 @@ var vp = await Project.new("villagepump");
 for await (const element of vp.pageList()) {
 	console.log(element);
 }
-console.log(await vp.getPage("井戸端"))
+console.log(await vp.getPage("井戸端"));
