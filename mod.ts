@@ -268,9 +268,3 @@ export class Page extends CosenseClient {
 		Object.assign(this, init);
 	}
 }
-
-var vp = await Project.new("villagepump");
-for await (const element of vp.pageList()) {
-	console.log(element);
-}
-console.log(await vp.getPage("井戸端"));
