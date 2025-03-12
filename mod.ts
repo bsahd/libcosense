@@ -103,7 +103,7 @@ export class Project extends CosenseClient {
 			}
 		}
 	}
-	getPage(pageName:string){
+	getPage(pageName:string):Promise<Page>{
 		return Page.new(this.projectName,pageName,this)
 	}
 }
@@ -126,7 +126,7 @@ export class PageListItem extends CosenseClient {
 		Object.assign(this, init); 
 	}
 
-	getDetail() {
+	getDetail():Promise<Page> {
 		return Page.new(this.projectName,this.title,this)
 	}
 }
@@ -195,7 +195,7 @@ export class Page extends CosenseClient{
 		displayName: string;
 		photo: string;
 	}[];
-	static async new(projectName:string,pageName:string,options:CosenseClient){
+	static async new(projectName:string,pageName:string,options:CosenseClient):Promise<Page>{
 		return new Page(
 			await (await options.fetch(
 				`https://scrapbox.io/api/pages/${projectName}/${
