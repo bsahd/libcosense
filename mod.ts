@@ -122,7 +122,7 @@ export class Project extends CosenseClient {
 	}
 }
 
-class SearchResult extends CosenseClient {
+export class SearchResult extends CosenseClient {
 	searchQuery!: string; // 検索語句
 	query!: {
 		words: string[]; // AND検索に使った語句
@@ -151,7 +151,7 @@ class SearchResult extends CosenseClient {
 			super2,
 		);
 	}
-	constructor(init: SearchResult, super2: CosenseClient) {
+	private constructor(init: SearchResult, super2: CosenseClient) {
 		super(super2.projectName, super2.options);
 		Object.assign(this, init);
 	}
