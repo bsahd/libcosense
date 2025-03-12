@@ -19,7 +19,7 @@ export class CosenseClient {
 		this.options = options;
 		this.projectName=projectName;
 	}
-	protected async fetch(url: string, options?: RequestInit): Promise<Response> {
+	async fetch(url: string, options?: RequestInit): Promise<Response> {
 		return await fetch(
 			url,
 			this.options.sessionid
