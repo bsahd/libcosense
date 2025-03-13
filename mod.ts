@@ -1,6 +1,4 @@
-
-/** base cosense client class */
-export class CosenseClient {
+export interface CosenseClientopts {
 	/**
 	 * This option only works in runtime other than a browser.
 	 */
@@ -17,11 +15,20 @@ export class CosenseClient {
 		input: RequestInfo | URL,
 		init?: RequestInit,
 	) => Promise<Response>;
-	static detectBrowser():boolean {
+}
+/** base cosense client class */
+export class CosenseClient implements CosenseClientopts{
+	sessionid?: string;
+	allowediting?: boolean;
+	alternativeFetch?: (
+		input: RequestInfo | URL,
+		init?: RequestInit,
+	) => Promise<Response>;
+	static detectBrowser(): boolean {
 		return Object.hasOwn(globalThis, "document");
 	}
 	constructor(
-		options: CosenseClient,
+		options: CosenseClientopts,
 	) {
 		Object.assign(this, options);
 	}
@@ -42,7 +49,7 @@ export class CosenseClient {
 }
 
 /** cosense project */
-export class Project  {
+export class Project {
 	id!: string;
 	name: string;
 	displayName!: string;
@@ -57,12 +64,12 @@ export class Project  {
 	created!: number;
 	updated!: number;
 	isMember!: boolean;
-	client:CosenseClient;
+	client: CosenseClient;
 
 	/** create a project reader */
 	static async new(
 		projectName: string,
-		options: CosenseClient,
+		options: CosenseClientopts,
 	): Promise<Project> {
 		const projectInfomation = await fetch(
 			"https://scrapbox.io/api/projects/" +
@@ -76,14 +83,16 @@ export class Project  {
 		if (!projectInfomation.ok) {
 			throw new Error(await projectInfomation.text());
 		}
-		return new Project(projectName,options,
+		return new Project(
+			projectName,
+			options,
 			await projectInfomation.json(),
 		);
 	}
 
 	private constructor(
-		name:string,
-		options: CosenseClient,
+		name: string,
+		options: CosenseClientopts,
 		projectInfo: Project,
 	) {
 		this.client = new CosenseClient(options);
@@ -112,7 +121,7 @@ export class Project  {
 		}
 	}
 
-	latestPages(options: LatestPagesInit):Promise<LatestPages> {
+	latestPages(options: LatestPagesInit): Promise<LatestPages> {
 		return LatestPages.new(options, this);
 	}
 
@@ -137,7 +146,7 @@ export interface LatestPagesInit {
 		| "title"
 		| "updatedbyMe";
 }
-export class LatestPagesPage  {
+export class LatestPagesPage {
 	id!: string;
 	title!: string;
 	image!: string | null;
@@ -157,19 +166,19 @@ export class LatestPagesPage  {
 	/** internal use only */
 	constructor(init: LatestPagesPage, project: Project) {
 		Object.assign(this, init);
-		this.project = project
+		this.project = project;
 	}
 
 	getDetail(): Promise<Page> {
 		return Page.new(this.title, this.project);
 	}
 }
-export class LatestPages  {
+export class LatestPages {
 	skip!: number; // parameterに渡したskipと同じ
 	limit!: number; // parameterに渡したlimitと同じ
 	count!: number; // projectの全ページ数 (中身のないページを除く)
 	pages: LatestPagesPage[];
-	project:Project;
+	project: Project;
 	static async new(
 		options: LatestPagesInit,
 		project: Project,
@@ -200,7 +209,7 @@ export class LatestPages  {
 	}
 }
 
-export class SearchResult  {
+export class SearchResult {
 	searchQuery!: string; // 検索語句
 	query!: {
 		words: string[]; // AND検索に使った語句
@@ -217,7 +226,7 @@ export class SearchResult  {
 		words: string[];
 		lines: string[];
 	}[];
-	project:Project;
+	project: Project;
 	static async new(
 		query: string,
 		project: Project,
@@ -236,12 +245,12 @@ export class SearchResult  {
 	}
 }
 
-export class PageListItem  {
+export class PageListItem {
 	id!: string;
 	title!: string;
 	links!: string[];
 	updated!: number;
-	project:Project;
+	project: Project;
 	/** internal use only */
 	constructor(init: PageListItem, project: Project) {
 		Object.assign(this, init);
@@ -253,7 +262,7 @@ export class PageListItem  {
 	}
 }
 
-export class Page  {
+export class Page {
 	id!: string;
 	title!: string;
 	image!: string;
@@ -317,7 +326,7 @@ export class Page  {
 		displayName: string;
 		photo: string;
 	}[];
-	project:Project;
+	project: Project;
 	static async new(
 		pageName: string,
 		project: Project,
