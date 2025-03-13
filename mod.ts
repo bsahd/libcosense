@@ -17,7 +17,7 @@ export class CosenseClient {
 		input: RequestInfo | URL,
 		init?: RequestInit,
 	) => Promise<Response>;
-	static detectBrowser() {
+	static detectBrowser():boolean {
 		return Object.hasOwn(globalThis, "document");
 	}
 	constructor(
