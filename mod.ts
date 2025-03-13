@@ -1,6 +1,6 @@
-export interface CosenseConstructorOptions {
-	/** Project name on cosense */
-	projectName: string;
+
+/** base cosense client class */
+export class CosenseClient {
 	/**
 	 * This option only works in runtime other than a browser.
 	 */
@@ -17,30 +17,16 @@ export interface CosenseConstructorOptions {
 		input: RequestInfo | URL,
 		init?: RequestInit,
 	) => Promise<Response>;
-}
-
-class BrowserDetector {
-	static detect() {
+	static detectBrowser() {
 		return Object.hasOwn(globalThis, "document");
 	}
-}
-/** base cosense client class */
-export class CosenseClient implements CosenseConstructorOptions {
-	projectName!: string;
-	sessionid?: string;
-	allowediting!: boolean;
-	alternativeFetch?: (
-		input: RequestInfo | URL,
-		init?: RequestInit,
-	) => Promise<Response>;
-
-	protected constructor(
-		options: CosenseConstructorOptions,
+	constructor(
+		options: CosenseClient,
 	) {
 		Object.assign(this, options);
 	}
 	async fetch(url: string, options?: RequestInit): Promise<Response> {
-		const usesessid = !BrowserDetector.detect() && this.sessionid;
+		const usesessid = !CosenseClient.detectBrowser() && this.sessionid;
 		return await (this.alternativeFetch ? this.alternativeFetch : fetch)(
 			url,
 			usesessid
@@ -56,7 +42,7 @@ export class CosenseClient implements CosenseConstructorOptions {
 }
 
 /** cosense project */
-export class Project extends CosenseClient {
+export class Project  {
 	id!: string;
 	name: string;
 	displayName!: string;
@@ -71,28 +57,12 @@ export class Project extends CosenseClient {
 	created!: number;
 	updated!: number;
 	isMember!: boolean;
+	client:CosenseClient;
 
 	/** create a project reader */
 	static async new(
 		projectName: string,
-		options: {
-			/**
-			 * This option only works in runtime other than a browser.
-			 */
-			sessionid?: string;
-			/**
-			 * in runtime other than a browser, requires sessionid.
-			 * if is undefined, is means false.
-			 */
-			allowediting?: boolean;
-			/**
-			 * if not undefined, use alternativeFetch instead of fetch
-			 */
-			alternativeFetch?: (
-				input: RequestInfo | URL,
-				init?: RequestInit,
-			) => Promise<Response>;
-		},
+		options: CosenseClient,
 	): Promise<Project> {
 		const projectInfomation = await fetch(
 			"https://scrapbox.io/api/projects/" +
@@ -106,18 +76,18 @@ export class Project extends CosenseClient {
 		if (!projectInfomation.ok) {
 			throw new Error(await projectInfomation.text());
 		}
-		return new Project(
-			{ ...options, projectName },
+		return new Project(projectName,options,
 			await projectInfomation.json(),
 		);
 	}
 
 	private constructor(
-		options: CosenseConstructorOptions,
+		name:string,
+		options: CosenseClient,
 		projectInfo: Project,
 	) {
-		super(options);
-		this.name = options.projectName;
+		this.client = new CosenseClient(options);
+		this.name = name;
 		Object.assign(this, projectInfo);
 	}
 
@@ -126,7 +96,7 @@ export class Project extends CosenseClient {
 		let followId: string | null = null;
 		while (true) {
 			const partialPageListResponse: PageListItem[] =
-				await (await this.fetch(
+				await (await this.client.fetch(
 					"https://scrapbox.io/api/pages/" +
 						this.name + "/search/titles" +
 						(followId ? "?followingId=" + followId : ""),
@@ -167,7 +137,7 @@ export interface LatestPagesInit {
 		| "title"
 		| "updatedbyMe";
 }
-export class LatestPagesPage extends CosenseClient {
+export class LatestPagesPage  {
 	id!: string;
 	title!: string;
 	image!: string | null;
@@ -183,29 +153,31 @@ export class LatestPagesPage extends CosenseClient {
 	lastAccessed?: number;
 	snapshotCreated!: number | null;
 	pageRank!: number;
+	project: Project;
 	/** internal use only */
-	constructor(init: LatestPagesPage, super2: CosenseClient) {
-		super(super2);
+	constructor(init: LatestPagesPage, project: Project) {
 		Object.assign(this, init);
+		this.project = project
 	}
 
 	getDetail(): Promise<Page> {
-		return Page.new(this.title, this);
+		return Page.new(this.title, this.project);
 	}
 }
-export class LatestPages extends CosenseClient {
+export class LatestPages  {
 	skip!: number; // parameterに渡したskipと同じ
 	limit!: number; // parameterに渡したlimitと同じ
 	count!: number; // projectの全ページ数 (中身のないページを除く)
 	pages: LatestPagesPage[];
+	project:Project;
 	static async new(
 		options: LatestPagesInit,
-		super2: CosenseClient,
+		project: Project,
 	): Promise<LatestPages> {
 		return new LatestPages(
-			await (await super2.fetch(
+			await (await project.client.fetch(
 				"https://scrapbox.io/api/pages/" +
-					super2.projectName + "/?" +
+					project.name + "/?" +
 					options.limit
 					? "limit=" + options.limit + "&"
 					: "" +
@@ -216,19 +188,19 @@ export class LatestPages extends CosenseClient {
 					? "sort=" + options.sort + "&"
 					: "",
 			)).json(),
-			super2,
+			project,
 		);
 	}
-	private constructor(init: LatestPages, super2: CosenseClient) {
-		super(super2);
+	private constructor(init: LatestPages, project: Project) {
 		Object.assign(this, init);
+		this.project = project;
 		this.pages = init.pages.map((a) => {
-			return new LatestPagesPage(a, this);
+			return new LatestPagesPage(a, this.project);
 		});
 	}
 }
 
-export class SearchResult extends CosenseClient {
+export class SearchResult  {
 	searchQuery!: string; // 検索語句
 	query!: {
 		words: string[]; // AND検索に使った語句
@@ -245,41 +217,43 @@ export class SearchResult extends CosenseClient {
 		words: string[];
 		lines: string[];
 	}[];
+	project:Project;
 	static async new(
 		query: string,
-		super2: CosenseClient,
+		project: Project,
 	): Promise<SearchResult> {
 		return new SearchResult(
-			await (await super2.fetch(
-				"https://scrapbox.io/api/pages/" + super2.projectName +
+			await (await project.client.fetch(
+				"https://scrapbox.io/api/pages/" + project.name +
 					"/search/query?q=" + encodeURIComponent(query),
 			)).json(),
-			super2,
+			project,
 		);
 	}
-	private constructor(init: SearchResult, super2: CosenseClient) {
-		super(super2);
+	private constructor(init: SearchResult, project: Project) {
 		Object.assign(this, init);
+		this.project = project;
 	}
 }
 
-export class PageListItem extends CosenseClient {
+export class PageListItem  {
 	id!: string;
 	title!: string;
 	links!: string[];
 	updated!: number;
+	project:Project;
 	/** internal use only */
-	constructor(init: PageListItem, super2: CosenseClient) {
-		super(super2);
+	constructor(init: PageListItem, project: Project) {
 		Object.assign(this, init);
+		this.project = project;
 	}
 
 	getDetail(): Promise<Page> {
-		return Page.new(this.title, this);
+		return Page.new(this.title, this.project);
 	}
 }
 
-export class Page extends CosenseClient {
+export class Page  {
 	id!: string;
 	title!: string;
 	image!: string;
@@ -343,24 +317,25 @@ export class Page extends CosenseClient {
 		displayName: string;
 		photo: string;
 	}[];
+	project:Project;
 	static async new(
 		pageName: string,
-		options: CosenseClient,
+		project: Project,
 	): Promise<Page> {
 		return new Page(
-			await (await options.fetch(
-				`https://scrapbox.io/api/pages/${options.projectName}/${
+			await (await project.client.fetch(
+				`https://scrapbox.io/api/pages/${project.name}/${
 					encodeURIComponent(pageName)
 				}`,
 			)).json(),
-			options,
+			project,
 		);
 	}
 	private constructor(
 		init: Page,
-		options: CosenseClient,
+		project: Project,
 	) {
-		super(options);
 		Object.assign(this, init);
+		this.project = project;
 	}
 }
