@@ -36,7 +36,10 @@ export class CosenseClient implements CosenseClientopts {
 		this.urlbase = "https://scrapbox.io/api/";
 		Object.assign(this, options);
 	}
-	async fetch(url: RequestInfo | URL, options?: RequestInit): Promise<Response> {
+	async fetch(
+		url: RequestInfo | URL,
+		options?: RequestInit,
+	): Promise<Response> {
 		const usesessid = !CosenseClient.detectBrowser() && this.sessionid;
 		return await (this.alternativeFetch ? this.alternativeFetch : fetch)(
 			this.urlbase + url,
@@ -54,25 +57,48 @@ export class CosenseClient implements CosenseClientopts {
 
 /** cosense project */
 export class Project {
+	/** Project UUID */
 	id!: string;
+	/** Project URL
+	 * if URL at project top is "https://scrapbox.io/example001",
+	 * this param is "example001".
+	 */
 	name: string;
+	/** Project name */
 	displayName!: string;
+	/** Project public visiability */
 	publicVisible!: boolean;
+	/** Always empty */
 	loginStrategies!: string[];
+	/** if private project, "personal" or "business". else if public, is undefined. */
 	plan?: string;
+	/** theme of project */
 	theme!: string;
+	/** if project using gyazo teams, is gyazo teams name. else, null. */
 	gyazoTeamsName!: string | null;
+	/** project favicon */
 	image!: string | null;
+	/** translation mode enabled/disabled */
 	translation!: boolean;
+	/** infobox enabled/disabled */
 	infobox!: boolean;
+	/** unix time at project creating */
 	created!: number;
+	/** unix time at project updating */
 	updated!: number;
+	/** if logined and joined to this project, is true. if not member or not logined and public, is false. */
 	isMember!: boolean;
+	/** client info */
 	client: CosenseClient;
 
 	/** create a project reader */
 	static async new(
+		/** name of project.
+		 * if URL at project top is "https://scrapbox.io/example001",
+		 * this param is "example001".
+		 */
 		projectName: string,
+		/** Client options for authnicating. */
 		options: CosenseClientopts,
 	): Promise<Project> {
 		const projectInfomation =
@@ -130,7 +156,7 @@ export class Project {
 			}
 		}
 	}
-
+	/** get list of latest pages */
 	latestPages(options: LatestPagesInit): Promise<LatestPages> {
 		return LatestPages.new(options, this);
 	}
@@ -139,14 +165,22 @@ export class Project {
 	getPage(pageName: string): Promise<Page> {
 		return Page.new(pageName, this);
 	}
-
+	/** full text search */
 	search(query: string): Promise<SearchResult> {
 		return SearchResult.new(query, this);
 	}
 }
 export interface LatestPagesInit {
+	/** limit of elements.
+	 * min: 1
+	 * max: 1000
+	 */
 	limit?: number;
+	/** skip elements of head.
+	 * if you're doing all pages list, please use Project.prototype.pageList().
+	 */
 	skip?: number;
+	/** sort method */
 	sort:
 		| "updated"
 		| "created"
@@ -157,20 +191,44 @@ export interface LatestPagesInit {
 		| "updatedbyMe";
 }
 export class LatestPagesPage {
+	/** id of page */
 	id!: string;
+	/** page title */
 	title!: string;
+	/** page thumbnail */
 	image!: string | null;
+	/** page descriptions(first 5 lines without title line) */
 	descriptions!: string[];
-	user!: { id: string };
-	pin!: number; // pinされてないときは0
+	/** a creator of page */
+	user!: {
+		/** user id */
+		id: string;
+		/** a name of user page. */
+		name: string;
+		/** a display name of user. */
+		displayName: string;
+		/** a url to user icon */
+		photo: string;
+	};
+	/** pinされてないときは0 */
+	pin!: number;
+	/** page view */
 	views!: number;
+	/** backlink count */
 	linked!: number;
+	/** latest commit id */
 	commitId!: string;
+	/** unix time of page created. */
 	created!: number;
+	/** unix time of page updated. */
 	updated!: number;
+	/** unix time of page last accessed. */
 	accessed!: number;
+	/** unix time of page last accessed of me. (if not logined or not viewed, is undefined.)*/
 	lastAccessed?: number;
+	/** unix time of last backup created. */
 	snapshotCreated!: number | null;
+	/** page rank of page */
 	pageRank!: number;
 	project: Project;
 	/** internal use only */
@@ -285,7 +343,7 @@ export class PageListItem {
 	}
 }
 
-export class RelatedPage{
+export class RelatedPage {
 	id!: string;
 	title!: string;
 	titleLc!: string;
@@ -295,10 +353,10 @@ export class RelatedPage{
 	linked!: number;
 	updated!: number;
 	accessed!: number;
-	page:Page;
+	page: Page;
 	/** internal use only */
-	constructor(relatedItem:RelatedPage,page:Page){
-		Object.assign(this,relatedItem)
+	constructor(relatedItem: RelatedPage, page: Page) {
+		Object.assign(this, relatedItem);
 		this.page = page;
 	}
 	getDetail(): Promise<Page> {
@@ -307,21 +365,47 @@ export class RelatedPage{
 }
 
 export class Page {
+	/** id of page */
 	id!: string;
+	/** page title */
 	title!: string;
-	image!: string;
+	/** page thumbnail */
+	image!: string | null;
+	/** page descriptions(first 5 lines without title line) */
 	descriptions!: string[];
-	pin!: 0 | 1;
+	/** a creator of page */
+	user!: {
+		/** user id */
+		id: string;
+		/** a name of user page. */
+		name: string;
+		/** a display name of user. */
+		displayName: string;
+		/** a url to user icon */
+		photo: string;
+	};
+	/** pinされてないときは0 */
+	pin!: number;
+	/** page view */
 	views!: number;
+	/** backlink count */
 	linked!: number;
-	commitId?: string;
+	/** latest commit id */
+	commitId!: string;
+	/** unix time of page created. */
 	created!: number;
+	/** unix time of page updated. */
 	updated!: number;
+	/** unix time of page last accessed. */
 	accessed!: number;
-	lastAccessed!: number | null;
+	/** unix time of page last accessed of me. (if not logined or not viewed, is undefined.)*/
+	lastAccessed?: number;
+	/** unix time of last backup created. */
 	snapshotCreated!: number | null;
-	snapshotCount!: number;
+	/** page rank of page */
 	pageRank!: number;
+	/** count of snapshot */
+	snapshotCount!: number;
 	persistent!: boolean;
 	lines!: {
 		id: string;
@@ -338,16 +422,14 @@ export class Page {
 		links2hop: RelatedPage[];
 		hasBackLinksOrIcons: boolean;
 	};
-	user!: {
-		id: string;
-		name: string;
-		displayName: string;
-		photo: string;
-	};
 	collaborators!: {
+		/** user id */
 		id: string;
+		/** a name of user page. */
 		name: string;
+		/** a display name of user. */
 		displayName: string;
+		/** a url to user icon */
 		photo: string;
 	}[];
 	project: Project;
@@ -368,7 +450,11 @@ export class Page {
 	) {
 		Object.assign(this, init);
 		this.project = project;
-		this.relatedPages.links1hop = init.relatedPages.links1hop.map(relatedItem=>new RelatedPage(relatedItem,this))
-		this.relatedPages.links2hop = init.relatedPages.links2hop.map(relatedItem=>new RelatedPage(relatedItem,this))
+		this.relatedPages.links1hop = init.relatedPages.links1hop.map(
+			(relatedItem) => new RelatedPage(relatedItem, this),
+		);
+		this.relatedPages.links2hop = init.relatedPages.links2hop.map(
+			(relatedItem) => new RelatedPage(relatedItem, this),
+		);
 	}
 }
