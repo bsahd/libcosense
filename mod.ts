@@ -15,27 +15,31 @@ export interface CosenseClientopts {
 		input: RequestInfo | URL,
 		init?: RequestInit,
 	) => Promise<Response>;
+	/** URL base */
+	urlbase?: string;
 }
 /** base cosense client class */
-export class CosenseClient implements CosenseClientopts{
+export class CosenseClient implements CosenseClientopts {
 	sessionid?: string;
 	allowediting?: boolean;
 	alternativeFetch?: (
 		input: RequestInfo | URL,
 		init?: RequestInit,
 	) => Promise<Response>;
+	urlbase: string;
 	static detectBrowser(): boolean {
 		return Object.hasOwn(globalThis, "document");
 	}
 	constructor(
 		options: CosenseClientopts,
 	) {
+		this.urlbase = "https://scrapbox.io/api/";
 		Object.assign(this, options);
 	}
-	async fetch(url: string, options?: RequestInit): Promise<Response> {
+	async fetch(url: RequestInfo | URL, options?: RequestInit): Promise<Response> {
 		const usesessid = !CosenseClient.detectBrowser() && this.sessionid;
 		return await (this.alternativeFetch ? this.alternativeFetch : fetch)(
-			url,
+			this.urlbase + url,
 			usesessid
 				? {
 					headers: {
@@ -55,10 +59,10 @@ export class Project {
 	displayName!: string;
 	publicVisible!: boolean;
 	loginStrategies!: string[];
-	plan!: string;
+	plan?: string;
 	theme!: string;
 	gyazoTeamsName!: string | null;
-	image?: string;
+	image!: string | null;
 	translation!: boolean;
 	infobox!: boolean;
 	created!: number;
@@ -71,15 +75,21 @@ export class Project {
 		projectName: string,
 		options: CosenseClientopts,
 	): Promise<Project> {
-		const projectInfomation = await fetch(
-			"https://scrapbox.io/api/projects/" +
-				encodeURIComponent(projectName),
-			options?.sessionid
-				? {
-					headers: { "Cookie:": "connect-sid=" + options.sessionid },
-				}
-				: {},
-		);
+		const projectInfomation =
+			await (options.alternativeFetch ? options.alternativeFetch : fetch)(
+				(typeof options.urlbase != "undefined"
+					? options.urlbase
+					: "https://scrapbox.io/api/") +
+					"projects/" +
+					encodeURIComponent(projectName),
+				options?.sessionid
+					? {
+						headers: {
+							"Cookie:": "connect-sid=" + options.sessionid,
+						},
+					}
+					: {},
+			);
 		if (!projectInfomation.ok) {
 			throw new Error(await projectInfomation.text());
 		}
@@ -106,7 +116,7 @@ export class Project {
 		while (true) {
 			const partialPageListResponse: PageListItem[] =
 				await (await this.client.fetch(
-					"https://scrapbox.io/api/pages/" +
+					"pages/" +
 						this.name + "/search/titles" +
 						(followId ? "?followingId=" + followId : ""),
 				)).json();
@@ -185,7 +195,7 @@ export class LatestPages {
 	): Promise<LatestPages> {
 		return new LatestPages(
 			await (await project.client.fetch(
-				"https://scrapbox.io/api/pages/" +
+				"pages/" +
 					project.name + "/?" +
 					options.limit
 					? "limit=" + options.limit + "&"
@@ -219,13 +229,7 @@ export class SearchResult {
 	count!: number; // 検索件数
 	existsExactTitleMatch!: boolean; // 詳細不明
 	backend!: "elasticsearch";
-	pages!: {
-		id: string;
-		title: string;
-		image: string; // 無いときは''になる
-		words: string[];
-		lines: string[];
-	}[];
+	pages: SearchResultPage[];
 	project: Project;
 	static async new(
 		query: string,
@@ -233,7 +237,7 @@ export class SearchResult {
 	): Promise<SearchResult> {
 		return new SearchResult(
 			await (await project.client.fetch(
-				"https://scrapbox.io/api/pages/" + project.name +
+				"pages/" + project.name +
 					"/search/query?q=" + encodeURIComponent(query),
 			)).json(),
 			project,
@@ -242,6 +246,25 @@ export class SearchResult {
 	private constructor(init: SearchResult, project: Project) {
 		Object.assign(this, init);
 		this.project = project;
+		this.pages = init.pages.map((a) => new SearchResultPage(a, this));
+	}
+}
+
+export class SearchResultPage {
+	id!: string;
+	title!: string;
+	image!: string; // 無いときは''になる
+	words!: string[];
+	lines!: string[];
+	search: SearchResult;
+	/** internal use only */
+	constructor(init: SearchResultPage, project: SearchResult) {
+		Object.assign(this, init);
+		this.search = project;
+	}
+
+	getDetail(): Promise<Page> {
+		return Page.new(this.title, this.search.project);
 	}
 }
 
@@ -259,6 +282,27 @@ export class PageListItem {
 
 	getDetail(): Promise<Page> {
 		return Page.new(this.title, this.project);
+	}
+}
+
+export class RelatedPage{
+	id!: string;
+	title!: string;
+	titleLc!: string;
+	image!: string;
+	descriptions!: string[];
+	linksLc!: string[];
+	linked!: number;
+	updated!: number;
+	accessed!: number;
+	page:Page;
+	/** internal use only */
+	constructor(relatedItem:RelatedPage,page:Page){
+		Object.assign(this,relatedItem)
+		this.page = page;
+	}
+	getDetail(): Promise<Page> {
+		return Page.new(this.title, this.page.project);
 	}
 }
 
@@ -290,28 +334,8 @@ export class Page {
 	icons!: string[];
 	files!: string[];
 	relatedPages!: {
-		links1hop: {
-			id: string;
-			title: string;
-			titleLc: string;
-			image: string;
-			descriptions: string[];
-			linksLc: string[];
-			linked: number;
-			updated: number;
-			accessed: number;
-		}[];
-		links2hop: {
-			id: string;
-			title: string;
-			titleLc: string;
-			image: string;
-			descriptions: string[];
-			linksLc: string[];
-			linked: number;
-			updated: number;
-			accessed: number;
-		}[];
+		links1hop: RelatedPage[];
+		links2hop: RelatedPage[];
 		hasBackLinksOrIcons: boolean;
 	};
 	user!: {
@@ -333,9 +357,7 @@ export class Page {
 	): Promise<Page> {
 		return new Page(
 			await (await project.client.fetch(
-				`https://scrapbox.io/api/pages/${project.name}/${
-					encodeURIComponent(pageName)
-				}`,
+				`pages/${project.name}/${encodeURIComponent(pageName)}`,
 			)).json(),
 			project,
 		);
@@ -346,5 +368,7 @@ export class Page {
 	) {
 		Object.assign(this, init);
 		this.project = project;
+		this.relatedPages.links1hop = init.relatedPages.links1hop.map(relatedItem=>new RelatedPage(relatedItem,this))
+		this.relatedPages.links2hop = init.relatedPages.links2hop.map(relatedItem=>new RelatedPage(relatedItem,this))
 	}
 }
