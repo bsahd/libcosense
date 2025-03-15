@@ -1,24 +1,29 @@
+/** Options for the Cosense client */
 export interface CosenseClientopts {
 	/**
-	 * This option only works in runtime other than a browser.
+	 * This option only works in runtimes other than a browser.
 	 */
 	sessionid?: string;
+
 	/**
-	 * in runtime other than a browser, requires sessionid.
-	 * if is undefined, is means false.
+	 * In runtime environments other than a browser, requires sessionid.
+	 * If undefined, it means false.
 	 */
 	allowediting?: boolean;
+
 	/**
-	 * if not undefined, use alternativeFetch instead of fetch
+	 * If defined, use alternativeFetch instead of the default fetch.
 	 */
 	alternativeFetch?: (
 		input: RequestInfo | URL,
 		init?: RequestInit,
 	) => Promise<Response>;
-	/** URL base */
+
+	/** Base URL for the API */
 	urlbase?: string;
 }
-/** base cosense client class */
+
+/** Base class for the Cosense client */
 export class CosenseClient implements CosenseClientopts {
 	sessionid?: string;
 	allowediting?: boolean;
@@ -27,15 +32,30 @@ export class CosenseClient implements CosenseClientopts {
 		init?: RequestInit,
 	) => Promise<Response>;
 	urlbase: string;
+
+	/**
+	 * Detects whether the runtime is a browser.
+	 * @returns true if the environment is a browser, false otherwise.
+	 */
 	static detectBrowser(): boolean {
 		return Object.hasOwn(globalThis, "document");
 	}
-	constructor(
-		options: CosenseClientopts,
-	) {
+
+	/**
+	 * Constructs a new CosenseClient instance.
+	 * @param options The client options.
+	 */
+	constructor(options: CosenseClientopts) {
 		this.urlbase = "https://scrapbox.io/api/";
 		Object.assign(this, options);
 	}
+
+	/**
+	 * Fetches data from the server.
+	 * @param url The URL to fetch.
+	 * @param options The fetch options.
+	 * @returns A Promise resolved with the fetch Response.
+	 */
 	async fetch(
 		url: RequestInfo | URL,
 		options?: RequestInit,
@@ -55,53 +75,72 @@ export class CosenseClient implements CosenseClientopts {
 	}
 }
 
-/** cosense project */
+/** Class representing a Cosense project */
 export class Project {
 	/** Project UUID */
 	id!: string;
-	/** Project URL
-	 * if URL at project top is "https://scrapbox.io/example001",
-	 * this param is "example001".
+
+	/**
+	 * Project URL (e.g., if the project URL is "https://scrapbox.io/example001", this is "example001").
 	 */
 	name: string;
-	/** Project name */
+
+	/** Project display name */
 	displayName!: string;
-	/** Project public visiability */
+
+	/** Whether the project is publicly visible */
 	publicVisible!: boolean;
-	/** Always empty */
+
+	/** Login strategies used for the project */
 	loginStrategies!: string[];
-	/** if private project, "personal" or "business". else if public, is undefined. */
+
+	/**
+	 * If the project is private, indicates the type: "personal" or "business".
+	 * If public, this is undefined.
+	 */
 	plan?: string;
-	/** theme of project */
+
+	/** Theme of the project */
 	theme!: string;
-	/** if project using gyazo teams, is gyazo teams name. else, null. */
+
+	/** If the project uses Gyazo Teams, this is the Gyazo Teams name. Otherwise, it is null. */
 	gyazoTeamsName!: string | null;
-	/** project favicon */
+
+	/** Project favicon */
 	image!: string | null;
-	/** translation mode enabled/disabled */
+
+	/** Whether translation is enabled */
 	translation!: boolean;
-	/** infobox enabled/disabled */
+
+	/** Whether infobox is enabled */
 	infobox!: boolean;
-	/** unix time at project creating */
+
+	/** Unix timestamp when the project was created */
 	created!: number;
-	/** unix time at project updating */
+
+	/** Unix timestamp when the project was last updated */
 	updated!: number;
-	/** if logined and joined to this project, is true. if not member or not logined and public, is false. */
+
+	/**
+	 * Whether the current user is a member of the project.
+	 * This is true if the user is logged in and a member of the project.
+	 */
 	isMember!: boolean;
-	/** client info */
+
+	/** The CosenseClient instance used by this project */
 	client: CosenseClient;
 
-	/** create a project reader */
+	/**
+	 * Creates a new project reader.
+	 * @param projectName The name of the project (e.g., "example001" if the URL is "https://scrapbox.io/example001").
+	 * @param options Client options for authenticating.
+	 * @returns A Promise that resolves to a Project instance.
+	 */
 	static async new(
-		/** name of project.
-		 * if URL at project top is "https://scrapbox.io/example001",
-		 * this param is "example001".
-		 */
 		projectName: string,
-		/** Client options for authnicating. */
 		options: CosenseClientopts,
 	): Promise<Project> {
-		const projectInfomation =
+		const projectInformation =
 			await (options.alternativeFetch ? options.alternativeFetch : fetch)(
 				(typeof options.urlbase != "undefined"
 					? options.urlbase
@@ -116,13 +155,13 @@ export class Project {
 					}
 					: {},
 			);
-		if (!projectInfomation.ok) {
-			throw new Error(await projectInfomation.text());
+		if (!projectInformation.ok) {
+			throw new Error(await projectInformation.text());
 		}
 		return new Project(
 			projectName,
 			options,
-			await projectInfomation.json(),
+			await projectInformation.json(),
 		);
 	}
 
@@ -136,7 +175,10 @@ export class Project {
 		Object.assign(this, projectInfo);
 	}
 
-	/** asyncgenerator for all pages list */
+	/**
+	 * Fetches the list of all pages in the project.
+	 * @returns An async generator yielding each page in the project.
+	 */
 	async *pageList(): AsyncGenerator<PageListItem, void, unknown> {
 		let followId: string | null = null;
 		while (true) {
@@ -156,31 +198,53 @@ export class Project {
 			}
 		}
 	}
-	/** get list of latest pages */
+
+	/**
+	 * Fetches the latest pages based on the specified options.
+	 * @param options Options for querying the latest pages.
+	 * @returns A Promise resolving to the latest pages result.
+	 */
 	latestPages(options: LatestPagesInit): Promise<LatestPages> {
 		return LatestPages.new(options, this);
 	}
 
-	/** get single page */
+	/**
+	 * Fetches a single page by name.
+	 * @param pageName The name of the page.
+	 * @returns A Promise that resolves to the Page instance.
+	 */
 	getPage(pageName: string): Promise<Page> {
 		return Page.new(pageName, this);
 	}
-	/** full text search */
+
+	/** Performs a full-text search across the project */
 	search(query: string): Promise<SearchResult> {
 		return SearchResult.new(query, this);
 	}
 }
+
+/** Options for querying the latest pages */
 export interface LatestPagesInit {
-	/** limit of elements.
-	 * min: 1
-	 * max: 1000
+	/**
+	 * Limit of elements to retrieve (min: 1, max: 1000).
 	 */
 	limit?: number;
-	/** skip elements of head.
-	 * if you're doing all pages list, please use Project.prototype.pageList().
+
+	/**
+	 * Number of elements to skip (useful for pagination).
 	 */
 	skip?: number;
-	/** sort method */
+
+	/**
+	 * Sort method for the results. Can be one of:
+	 * - "updated"
+	 * - "created"
+	 * - "accessed"
+	 * - "linked"
+	 * - "views"
+	 * - "title"
+	 * - "updatedbyMe"
+	 */
 	sort:
 		| "updated"
 		| "created"
@@ -190,63 +254,106 @@ export interface LatestPagesInit {
 		| "title"
 		| "updatedbyMe";
 }
+
+/** Class representing a single page in the latest pages result */
 export class LatestPagesPage {
-	/** id of page */
+	/** ID of the page */
 	id!: string;
-	/** page title */
+
+	/** Title of the page */
 	title!: string;
-	/** page thumbnail */
+
+	/** URL to the page's thumbnail */
 	image!: string | null;
-	/** page descriptions(first 5 lines without title line) */
+
+	/** Descriptions of the page (first 5 lines excluding the title line) */
 	descriptions!: string[];
-	/** a creator of page */
+
+	/** Creator of the page */
 	user!: {
-		/** user id */
+		/** User ID */
 		id: string;
-		/** a name of user page. */
+		/** User's page name */
 		name: string;
-		/** a display name of user. */
+		/** Display name of the user */
 		displayName: string;
-		/** a url to user icon */
+		/** URL to the user's icon */
 		photo: string;
 	};
-	/** pinされてないときは0 */
+
+	/** Pin status of the page (0 if not pinned) */
 	pin!: number;
-	/** page view */
+
+	/** Number of views the page has received */
 	views!: number;
-	/** backlink count */
+
+	/** Number of backlinks to the page */
 	linked!: number;
-	/** latest commit id */
+
+	/** Commit ID for the latest changes */
 	commitId!: string;
-	/** unix time of page created. */
+
+	/** Unix timestamp when the page was created */
 	created!: number;
-	/** unix time of page updated. */
+
+	/** Unix timestamp when the page was last updated */
 	updated!: number;
-	/** unix time of page last accessed. */
+
+	/** Unix timestamp when the page was last accessed */
 	accessed!: number;
-	/** unix time of page last accessed of me. (if not logined or not viewed, is undefined.)*/
+
+	/** Unix timestamp when the page was last accessed by the current user (undefined if not logged in or not accessed) */
 	lastAccessed?: number;
-	/** unix time of last backup created. */
+
+	/** Unix timestamp of the last backup created for the page */
 	snapshotCreated!: number | null;
-	/** page rank of page */
+
+	/** Page rank for the page */
 	pageRank!: number;
+
+	/** The project this page belongs to */
 	project: Project;
-	/** internal use only */
+
+	/**
+	 * **internal only:**
+	 * Creates a new instance of LatestPagesPage.
+	 * @param init The initial data for the page.
+	 * @param project The project this page belongs to.
+	 */
 	constructor(init: LatestPagesPage, project: Project) {
 		Object.assign(this, init);
 		this.project = project;
 	}
 
+	/** Fetches the detailed page information */
 	getDetail(): Promise<Page> {
 		return Page.new(this.title, this.project);
 	}
 }
+
+/** Class representing the latest pages result */
 export class LatestPages {
-	skip!: number; // parameterに渡したskipと同じ
-	limit!: number; // parameterに渡したlimitと同じ
-	count!: number; // projectの全ページ数 (中身のないページを除く)
+	/** Number of pages skipped in the request */
+	skip!: number;
+
+	/** Limit of pages in the request */
+	limit!: number;
+
+	/** Total number of pages in the project (excluding empty pages) */
+	count!: number;
+
+	/** List of the latest pages */
 	pages: LatestPagesPage[];
+
+	/** The project this result is associated with */
 	project: Project;
+
+	/**
+	 * Creates a new instance of LatestPages.
+	 * @param options Options for querying the latest pages.
+	 * @param project The project this result is associated with.
+	 * @returns A Promise that resolves to the latest pages result.
+	 */
 	static async new(
 		options: LatestPagesInit,
 		project: Project,
@@ -268,6 +375,7 @@ export class LatestPages {
 			project,
 		);
 	}
+
 	private constructor(init: LatestPages, project: Project) {
 		Object.assign(this, init);
 		this.project = project;
@@ -277,18 +385,41 @@ export class LatestPages {
 	}
 }
 
+/** Class representing a search result for a query */
 export class SearchResult {
-	searchQuery!: string; // 検索語句
+	/** The search query */
+	searchQuery!: string;
+
+	/** The parsed query */
 	query!: {
-		words: string[]; // AND検索に使った語句
+		words: string[];
 		excludes: string[];
 	};
-	limit!: number; // 検索件数の上限
-	count!: number; // 検索件数
-	existsExactTitleMatch!: boolean; // 詳細不明
+
+	/** Limit of the search result */
+	limit!: number;
+
+	/** Number of hits for the search */
+	count!: number;
+
+	/** Whether an exact title match was found */
+	existsExactTitleMatch!: boolean;
+
+	/** The backend used for the search (always "elasticsearch") */
 	backend!: "elasticsearch";
+
+	/** Pages that match the search query */
 	pages: SearchResultPage[];
+
+	/** The project the search result is from */
 	project: Project;
+
+	/**
+	 * Starts a new search query.
+	 * @param query The search query.
+	 * @param project The project to search within.
+	 * @returns A Promise that resolves to the search result.
+	 */
 	static async new(
 		query: string,
 		project: Project,
@@ -301,6 +432,7 @@ export class SearchResult {
 			project,
 		);
 	}
+
 	private constructor(init: SearchResult, project: Project) {
 		Object.assign(this, init);
 		this.project = project;
@@ -308,131 +440,219 @@ export class SearchResult {
 	}
 }
 
+/** Class representing a search result page */
 export class SearchResultPage {
+	/** Page ID */
 	id!: string;
+
+	/** Title of the page */
 	title!: string;
-	image!: string; // 無いときは''になる
+
+	/** URL to the page's thumbnail */
+	image!: string;
+
+	/** Keywords in the page */
 	words!: string[];
+
+	/** Hit lines in the page */
 	lines!: string[];
+
+	/** The search result this page belongs to */
 	search: SearchResult;
-	/** internal use only */
-	constructor(init: SearchResultPage, project: SearchResult) {
+
+	/** Internal use only */
+	constructor(
+		init: SearchResultPage,
+		project: SearchResult,
+	) {
 		Object.assign(this, init);
 		this.search = project;
 	}
 
+	/** Fetches the detailed page information */
 	getDetail(): Promise<Page> {
 		return Page.new(this.title, this.search.project);
 	}
 }
 
+/** Represents a page list item, typically used for paginated page listing in a project */
 export class PageListItem {
+	/** ID of the page */
 	id!: string;
+	/** Title of the page */
 	title!: string;
+	/** Links found within the page */
 	links!: string[];
+	/** Unix timestamp of the last update of the page */
 	updated!: number;
+	/** The associated project for this page list item */
 	project: Project;
-	/** internal use only */
+
+	/**
+	 * Create a new instance of a PageListItem.
+	 * @param init An object containing initial properties for the PageListItem
+	 * @param project The project this page list item belongs to
+	 */
 	constructor(init: PageListItem, project: Project) {
 		Object.assign(this, init);
 		this.project = project;
 	}
 
+	/**
+	 * Retrieves the details of the page associated with this list item.
+	 * @returns A promise resolving to a Page instance containing the full details
+	 */
 	getDetail(): Promise<Page> {
 		return Page.new(this.title, this.project);
 	}
 }
 
+/** Represents a related page to a given page. This includes one-hop and two-hop related pages. */
 export class RelatedPage {
+	/** ID of the related page */
 	id!: string;
+	/** Title of the related page */
 	title!: string;
+	/** Lowercased title of the related page */
 	titleLc!: string;
+	/** URL of the related page's thumbnail */
 	image!: string;
+	/** Descriptions of the related page */
 	descriptions!: string[];
+	/** Lowercased list of links in the related page */
 	linksLc!: string[];
+	/** Number of times this page is linked to */
 	linked!: number;
+	/** Unix timestamp of the last update of the related page */
 	updated!: number;
+	/** Unix timestamp of the last accessed time of the related page */
 	accessed!: number;
+	/** The page this related page belongs to */
 	page: Page;
-	/** internal use only */
+
+	/**
+	 * Creates a new RelatedPage instance.
+	 * @param relatedItem The initial properties for the related page
+	 * @param page The page that this related page is linked to
+	 */
 	constructor(relatedItem: RelatedPage, page: Page) {
 		Object.assign(this, relatedItem);
 		this.page = page;
 	}
+
+	/**
+	 * Retrieves the full details of this related page.
+	 * @returns A promise resolving to the full Page instance of the related page
+	 */
 	getDetail(): Promise<Page> {
 		return Page.new(this.title, this.page.project);
 	}
 }
 
+/** Represents a full page with its detailed content, metadata, and associated properties */
 export class Page {
-	/** id of page */
+	/** ID of the page */
 	id!: string;
-	/** page title */
+	/** Title of the page */
 	title!: string;
-	/** page thumbnail */
+	/** URL of the page's thumbnail image */
 	image!: string | null;
-	/** page descriptions(first 5 lines without title line) */
+	/** Descriptions of the page (excluding the title) */
 	descriptions!: string[];
-	/** a creator of page */
+	/** Information about the user who created the page */
 	user!: {
-		/** user id */
+		/** User ID */
 		id: string;
-		/** a name of user page. */
+		/** User's page name */
 		name: string;
-		/** a display name of user. */
+		/** User's display name */
 		displayName: string;
-		/** a url to user icon */
+		/** URL to the user's photo */
 		photo: string;
 	};
-	/** pinされてないときは0 */
-	pin!: number;
-	/** page view */
-	views!: number;
-	/** backlink count */
-	linked!: number;
-	/** latest commit id */
-	commitId!: string;
-	/** unix time of page created. */
-	created!: number;
-	/** unix time of page updated. */
-	updated!: number;
-	/** unix time of page last accessed. */
-	accessed!: number;
-	/** unix time of page last accessed of me. (if not logined or not viewed, is undefined.)*/
-	lastAccessed?: number;
-	/** unix time of last backup created. */
-	snapshotCreated!: number | null;
-	/** page rank of page */
-	pageRank!: number;
-	/** count of snapshot */
-	snapshotCount!: number;
-	persistent!: boolean;
-	lines!: {
+	/** Information about the user who last updated the page */
+	lastUpdateUser!: {
+		/** User ID */
 		id: string;
+		/** User's page name */
+		name: string;
+		/** User's display name */
+		displayName: string;
+		/** URL to the user's photo */
+		photo: string;
+	};
+	/** Pin status of the page. If unpinned, it is 0 */
+	pin!: number;
+	/** Number of views for the page */
+	views!: number;
+	/** Number of backlinks for the page */
+	linked!: number;
+	/** The commit ID for the latest update to the page */
+	commitId!: string;
+	/** Unix timestamp of when the page was created */
+	created!: number;
+	/** Unix timestamp of when the page was last updated */
+	updated!: number;
+	/** Unix timestamp of when the page was last accessed */
+	accessed!: number;
+	/** Unix timestamp of the last time the page was accessed by the current user (if applicable) */
+	lastAccessed?: number;
+	/** Unix timestamp of when the last backup was created for the page */
+	snapshotCreated!: number | null;
+	/** Page rank value */
+	pageRank!: number;
+	/** The number of snapshots created for this page */
+	snapshotCount!: number;
+	/** Always true for pages */
+	persistent!: boolean;
+	/** Array of lines in the page, where each line includes metadata like ID and text */
+	lines!: {
+		/** UUID of the line */
+		id: string;
+		/** Text of the line */
 		text: string;
+		/** User ID of the person who created the line */
 		userId: string;
+		/** Unix timestamp of when the line was created */
 		created: number;
+		/** Unix timestamp of when the line was last updated */
 		updated: number;
 	}[];
+	/** List of forward links in the page */
 	links!: string[];
+	/** List of icons included in the page */
 	icons!: string[];
+	/** List of file URLs referenced in the page */
 	files!: string[];
+	/** Information about related pages (one-hop and two-hop links) */
 	relatedPages!: {
+		/** Direct related pages (1-hop links) */
 		links1hop: RelatedPage[];
+		/** Indirect related pages (2-hop links) */
 		links2hop: RelatedPage[];
+		/** Whether the page has backlinks or icons linking to it */
 		hasBackLinksOrIcons: boolean;
 	};
+	/** List of collaborators on the page, excluding the creator and last updater */
 	collaborators!: {
-		/** user id */
+		/** User ID of the collaborator */
 		id: string;
-		/** a name of user page. */
+		/** Page name of the collaborator */
 		name: string;
-		/** a display name of user. */
+		/** Display name of the collaborator */
 		displayName: string;
-		/** a url to user icon */
+		/** URL to the collaborator's photo */
 		photo: string;
 	}[];
+	/** The project this page belongs to */
 	project: Project;
+
+	/**
+	 * Retrieves a new instance of the Page class.
+	 * @param pageName The title of the page to fetch
+	 * @param project The project to which the page belongs
+	 * @returns A promise that resolves to a new Page instance
+	 */
 	static async new(
 		pageName: string,
 		project: Project,
@@ -444,6 +664,12 @@ export class Page {
 			project,
 		);
 	}
+
+	/**
+	 * Internal constructor used by the `new` method to create a page instance.
+	 * @param init The initial data for the page
+	 * @param project The project to which the page belongs
+	 */
 	private constructor(
 		init: Page,
 		project: Project,
