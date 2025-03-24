@@ -41,7 +41,7 @@ export class CosenseClient implements CosenseClientopts {
 			usesessid
 				? {
 					headers: {
-						"Cookie:": "connect-sid=" + this.sessionid,
+						"Cookie": "connect.sid=" + this.sessionid,
 					},
 					...options,
 				}
@@ -52,7 +52,8 @@ export class CosenseClient implements CosenseClientopts {
 /** Options for the Cosense client */
 export interface CosenseClientopts {
 	/**
-	 * This option only works in runtimes other than a browser.
+	 * This option only works in runtimes other than a browser(e.g. Node.js, Deno, Bun, Cloudflare Workers).
+	 * For security and flexibility reasons, it is STRONGLY recommended to obtain from environment variables.
 	 */
 	sessionid?: string;
 
@@ -119,16 +120,7 @@ export class LatestPagesPage {
 	descriptions!: string[];
 
 	/** Creator of the page */
-	user!: {
-		/** User ID */
-		id: string;
-		/** User's page name */
-		name: string;
-		/** Display name of the user */
-		displayName: string;
-		/** URL to the user's icon */
-		photo: string;
-	};
+	user!: Collaborator;
 
 	/** Pin status of the page (0 if not pinned) */
 	pin!: number;
@@ -251,6 +243,8 @@ export interface PageLine {
 	/** Unix timestamp of when the line was last updated */
 	updated: number;
 }
+
+/** Collaborator, User, LastUpdateUser of Page. */
 export interface Collaborator {
 	/** User ID of the collaborator */
 	id: string;
@@ -261,6 +255,7 @@ export interface Collaborator {
 	/** URL to the collaborator's photo */
 	photo: string;
 }
+
 export interface RelatedPages {
 	/** Direct related pages (1-hop links) */
 	links1hop: RelatedPage[];
@@ -304,7 +299,7 @@ export class Page {
 	snapshotCreated!: number | null;
 	/** Page rank value */
 	pageRank!: number;
-	/** The number of snapshots created for this page */
+	/** The number of snapshots(Page History) created for this page */
 	snapshotCount!: number;
 	/** Always true for pages */
 	persistent!: boolean;
@@ -359,6 +354,11 @@ export class Page {
 			(relatedItem) => new RelatedPage(relatedItem, this),
 		);
 	}
+
+	/** easyer access to text */
+	get text(): string {
+		return this.lines.map((a) => a.text).join("\n");
+	}
 }
 
 /** Represents a page list item, typically used for paginated page listing in a project */
@@ -393,6 +393,31 @@ export class PageListItem {
 	}
 }
 
+/** member of project.
+ * @see Project
+ * @see Collaborator
+ */
+export interface Member {
+	/** UUID of user. */
+	id: string;
+	/** name of user. */
+	name: string;
+	/** display name of user. */
+	displayName: string;
+	/** Profile image used when there is no personal page.  */
+	photo: string;
+	/** E-mail address */
+	email: string;
+	/** unknown */
+	pro: boolean;
+	/** authnication provider */
+	provider: "google" | "microsoft" | "email";
+	/** unknown */
+	created: number;
+	/** unknown */
+	updated: number;
+}
+
 /** Class representing a Cosense project */
 export class Project {
 	/** Project UUID */
@@ -411,12 +436,6 @@ export class Project {
 
 	/** Login strategies used for the project */
 	loginStrategies!: string[];
-
-	/**
-	 * If the project is private, indicates the type: "personal" or "business".
-	 * If public, this is undefined.
-	 */
-	plan?: string;
 
 	/** Theme of the project */
 	theme!: string;
@@ -445,8 +464,45 @@ export class Project {
 	 */
 	isMember!: boolean;
 
+	/**
+	 * If the project is private, indicates the type: "personal" or "business".
+	 * If public, this is null.
+	 * If not loggined, is undefined.
+	 */
+	plan?: string | null;
+
 	/** The CosenseClient instance used by this project */
 	client: CosenseClient;
+
+	/** Users of project. If not loggined, is undefined. */
+	users?: Member[];
+
+	/** ID of admins of project. If not loggined, is undefined. */
+	admins?: string[];
+
+	/** ID of owner of project. If not loggined, is undefined. */
+	owner?: string;
+
+	/** If not loggined, is undefined. */
+	trialing?: boolean;
+
+	/** If not loggined, is undefined. */
+	trialMaxPages?: number;
+
+	/** If not loggined, is undefined. */
+	skipPayment?: boolean;
+
+	/** always "gcs". If not loggined, is undefined. */
+	uploadFileTo?: "gcs";
+
+	/** gyazo or gcs. If not loggined, is undefined. */
+	uploadImageTo?: "gyazo" | "gcs";
+
+	/** If not loggined, is undefined. */
+	emailAddressPatterns?: string[];
+
+	/** last backuped date. If not loggined, is undefined. */
+	backuped?: number | null;
 
 	/**
 	 * Creates a new project reader.
@@ -468,7 +524,7 @@ export class Project {
 				options?.sessionid
 					? {
 						headers: {
-							"Cookie:": "connect-sid=" + options.sessionid,
+							"Cookie": "connect.sid=" + options.sessionid,
 						},
 					}
 					: {},
@@ -551,7 +607,7 @@ export class RelatedPage {
 	titleLc!: string;
 	/** URL of the related page's thumbnail */
 	image!: string;
-	/** Descriptions of the related page */
+	/** Descriptions of the related page. max 5 lines. */
 	descriptions!: string[];
 	/** Lowercased list of links in the related page */
 	linksLc!: string[];
