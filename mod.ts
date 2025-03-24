@@ -49,8 +49,23 @@ export class CosenseClient implements CosenseClientopts {
 		);
 	}
 
+	/**
+	 * new project use existing client
+	 * @param projectName Project name
+	 * @returns Project instance
+	 */
+	getProject(projectName: string): Promise<Project> {
+		return Project.useClient(projectName, this);
+	}
+
+	/**
+	 * new project use existing client
+	 * @deprecated PLEASE USE `CosenseClient.prototype.getProject()`
+	 * @param projectName Project name
+	 * @returns Project instance
+	 */
 	toProject(projectName: string): Promise<Project> {
-		return Project.useClient(projectName,this);
+		return this.getProject(projectName);
 	}
 }
 /** Options for the Cosense client */
@@ -77,7 +92,9 @@ export interface CosenseClientopts {
 
 	/** Base URL for the API */
 	urlbase?: string;
-} /** Options for querying the latest pages */
+}
+
+/** Options for querying the latest pages */
 export interface LatestPagesInit {
 	/**
 	 * Limit of elements to retrieve (min: 1, max: 1000).
@@ -260,6 +277,7 @@ export interface Collaborator {
 	photo: string;
 }
 
+/** Information about related pages (one-hop and two-hop links) */
 export interface RelatedPages {
 	/** Direct related pages (1-hop links) */
 	links1hop: RelatedPage[];
@@ -512,6 +530,8 @@ export class Project {
 
 	/**
 	 * Creates a new project reader.
+	 * PLEASE MAKE CLIENT FIRST AND GETTING PROJECT USING `CosenseClient.prototype.getProject()`!
+	 * @deprecated
 	 * @param projectName The name of the project (e.g., "example001" if the URL is "https://scrapbox.io/example001").
 	 * @param options Client options for authenticating.
 	 * @returns A Promise that resolves to a Project instance.
@@ -545,7 +565,8 @@ export class Project {
 		);
 	}
 
-	/** use already created CosenseClient
+	/** use existing CosenseClient
+	 * PLEASE USE `CosenseClient.prototype.getProject()`
 	 * 	@param projectName The name of the project (e.g., "example001" if the URL is "https://scrapbox.io/example001").
 	 * @param client CosenseClient instance
 	 * @returns A Promise that resolves to a Project instance.
