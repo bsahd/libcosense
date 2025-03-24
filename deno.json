@@ -1,11 +1,12 @@
 {
 	"name": "@bsahd/libcosense",
-	"version": "1.4.1",
+	"version": "1.4.2",
 	"exports": "./mod.ts",
 	"license": "MIT",
 	"fmt": {
 		"useTabs": true,
-		"indentWidth": 4
+		"indentWidth": 4,
+		"lineWidth": 80
 	},
 	"compilerOptions": {
 		"strict": true,

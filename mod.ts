@@ -377,7 +377,9 @@ export class Page {
 		);
 	}
 
-	/** easyer access to text */
+	/** easyer access to text
+	 * @returns Text of Page
+	 */
 	get text(): string {
 		return this.lines.map((a) => a.text).join("\n");
 	}
@@ -530,8 +532,7 @@ export class Project {
 
 	/**
 	 * Creates a new project reader.
-	 * PLEASE MAKE CLIENT FIRST AND GETTING PROJECT USING `CosenseClient.prototype.getProject()`!
-	 * @deprecated
+	 * @deprecated PLEASE MAKE CLIENT FIRST AND GETTING PROJECT USING `CosenseClient.prototype.getProject()`!
 	 * @param projectName The name of the project (e.g., "example001" if the URL is "https://scrapbox.io/example001").
 	 * @param options Client options for authenticating.
 	 * @returns A Promise that resolves to a Project instance.
@@ -641,7 +642,10 @@ export class Project {
 		return Page.new(pageName, this);
 	}
 
-	/** Performs a full-text search across the project */
+	/** Performs a full-text search across the project
+	 * @param query a search query
+	 * @returns promise resolve to search result
+	 */
 	search(query: string): Promise<SearchResult> {
 		return SearchResult.new(query, this);
 	}
