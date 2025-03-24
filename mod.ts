@@ -48,6 +48,10 @@ export class CosenseClient implements CosenseClientopts {
 				: options,
 		);
 	}
+
+	toProject(projectName: string): Promise<Project> {
+		return Project.useClient(projectName,this);
+	}
 }
 /** Options for the Cosense client */
 export interface CosenseClientopts {
@@ -416,6 +420,8 @@ export interface Member {
 	created: number;
 	/** unknown */
 	updated: number;
+	/** page fiters */
+	pageFilters: { type: string; value: string }[];
 }
 
 /** Class representing a Cosense project */
@@ -534,17 +540,40 @@ export class Project {
 		}
 		return new Project(
 			projectName,
-			options,
+			new CosenseClient(options),
+			await projectInformation.json(),
+		);
+	}
+
+	/** use already created CosenseClient
+	 * 	@param projectName The name of the project (e.g., "example001" if the URL is "https://scrapbox.io/example001").
+	 * @param client CosenseClient instance
+	 * @returns A Promise that resolves to a Project instance.
+	 */
+	static async useClient(
+		projectName: string,
+		client: CosenseClient,
+	): Promise<Project> {
+		const projectInformation = await client.fetch(
+			"projects/" +
+				encodeURIComponent(projectName),
+		);
+		if (!projectInformation.ok) {
+			throw new Error(await projectInformation.text());
+		}
+		return new Project(
+			projectName,
+			client,
 			await projectInformation.json(),
 		);
 	}
 
 	private constructor(
 		name: string,
-		options: CosenseClientopts,
+		client: CosenseClient,
 		projectInfo: Project,
 	) {
-		this.client = new CosenseClient(options);
+		this.client = client;
 		this.name = name;
 		Object.assign(this, projectInfo);
 	}
