@@ -1,5 +1,6 @@
 /** Base class for the Cosense client */
-export class CosenseClient implements CosenseClientopts {
+
+class CosenseClient implements CosenseClientopts {
 	sessionid?: string;
 	allowediting?: boolean;
 	alternativeFetch?: (
@@ -58,18 +59,9 @@ export class CosenseClient implements CosenseClientopts {
 		return Project.useClient(projectName, this);
 	}
 
-	/**
-	 * new project use existing client
-	 * @deprecated PLEASE USE `CosenseClient.prototype.getProject()`
-	 * @param projectName Project name
-	 * @returns Project instance
-	 */
-	toProject(projectName: string): Promise<Project> {
-		return this.getProject(projectName);
-	}
 }
 /** Options for the Cosense client */
-export interface CosenseClientopts {
+interface CosenseClientopts {
 	/**
 	 * This option only works in runtimes other than a browser(e.g. Node.js, Deno, Bun, Cloudflare Workers).
 	 * For security and flexibility reasons, it is STRONGLY recommended to obtain from environment variables.
@@ -95,7 +87,7 @@ export interface CosenseClientopts {
 }
 
 /** Options for querying the latest pages */
-export interface LatestPagesInit {
+interface LatestPagesInit {
 	/**
 	 * Limit of elements to retrieve (min: 1, max: 1000).
 	 */
@@ -127,7 +119,7 @@ export interface LatestPagesInit {
 }
 
 /** Class representing a single page in the latest pages result */
-export class LatestPagesPage {
+class LatestPagesPage {
 	/** ID of the page */
 	id!: string;
 
@@ -177,7 +169,6 @@ export class LatestPagesPage {
 	project: Project;
 
 	/**
-	 * **internal only:**
 	 * Creates a new instance of LatestPagesPage.
 	 * @param init The initial data for the page.
 	 * @param project The project this page belongs to.
@@ -194,7 +185,7 @@ export class LatestPagesPage {
 }
 
 /** Class representing the latest pages result */
-export class LatestPages {
+class LatestPages {
 	/** Number of pages skipped in the request */
 	skip!: number;
 
@@ -239,6 +230,18 @@ export class LatestPages {
 	}
 
 	private constructor(init: LatestPages, project: Project) {
+		if (
+			!(([init.skip, init.limit, init.count].every((val) =>
+				Number.isInteger(val)
+			) &&
+				Array.isArray(init.pages)) &&
+				init.pages.some((page) =>
+					!page.id || typeof page.id !== "number" ||
+					typeof page.title !== "string"
+				))
+		) {
+			throw "invalid";
+		}
 		Object.assign(this, init);
 		this.project = project;
 		this.pages = init.pages.map((a) => {
@@ -250,7 +253,7 @@ export class LatestPages {
 /** line of page.
  * @see Page
  */
-export interface PageLine {
+interface PageLine {
 	/** UUID of the line */
 	id: string;
 	/** Text of the line.
@@ -266,7 +269,7 @@ export interface PageLine {
 }
 
 /** Collaborator, User, LastUpdateUser of Page. */
-export interface Collaborator {
+interface Collaborator {
 	/** User ID of the collaborator */
 	id: string;
 	/** Page name of the collaborator */
@@ -278,7 +281,7 @@ export interface Collaborator {
 }
 
 /** Information about related pages (one-hop and two-hop links) */
-export interface RelatedPages {
+interface RelatedPages {
 	/** Direct related pages (1-hop links) */
 	links1hop: RelatedPage[];
 	/** Indirect related pages (2-hop links) */
@@ -288,7 +291,7 @@ export interface RelatedPages {
 }
 
 /** Represents a full page with its detailed content, metadata, and associated properties */
-export class Page {
+class Page {
 	/** ID of the page */
 	id!: string;
 	/** Title of the page */
@@ -367,6 +370,41 @@ export class Page {
 		init: Page,
 		project: Project,
 	) {
+		if(!(
+			typeof init.id === 'string' &&
+			typeof init.title === 'string' &&
+			(init.image === null || typeof init.image === 'string') &&
+			Array.isArray(init.descriptions) &&
+			init.descriptions.every(desc => typeof desc === 'string') &&
+			typeof init.pin === 'number' &&
+			typeof init.views === 'number' &&
+			typeof init.linked === 'number' &&
+			typeof init.commitId === 'string' &&
+			typeof init.created === 'number' &&
+			typeof init.updated === 'number' &&
+			typeof init.accessed === 'number' &&
+			(init.lastAccessed === undefined || typeof init.lastAccessed === 'number') &&
+			(init.snapshotCreated === null || typeof init.snapshotCreated === 'number') &&
+			typeof init.pageRank === 'number' &&
+			typeof init.snapshotCount === 'number' &&
+			typeof init.persistent === 'boolean' &&
+			Array.isArray(init.lines) &&
+			init.lines.every(line => typeof line === 'object' && line.id && line.text) &&
+			Array.isArray(init.links) &&
+			init.links.every(link => typeof link === 'string') &&
+			Array.isArray(init.icons) &&
+			init.icons.every(icon => typeof icon === 'string') &&
+			Array.isArray(init.files) &&
+			init.files.every(file => typeof file === 'string') &&
+			typeof init.relatedPages === 'object' &&
+			Array.isArray(init.collaborators) &&
+			init.collaborators.every(collab => typeof collab === 'object') &&
+			typeof init.project === 'object' &&
+			typeof init.project.id === 'number' &&
+			typeof init.project.name === 'string'
+		  )){
+			throw "invalid";
+		  }
 		Object.assign(this, init);
 		this.project = project;
 		this.relatedPages.links1hop = init.relatedPages.links1hop.map(
@@ -386,7 +424,7 @@ export class Page {
 }
 
 /** Represents a page list item, typically used for paginated page listing in a project */
-export class PageListItem {
+class PageListItem {
 	/** ID of the page */
 	id!: string;
 	/** Title of the page */
@@ -404,6 +442,15 @@ export class PageListItem {
 	 * @param project The project this page list item belongs to
 	 */
 	constructor(init: PageListItem, project: Project) {
+		if (
+			!(typeof init.id === "string" &&
+				typeof init.title === "string" &&
+				Array.isArray(init.links) &&
+				init.links.every((link: unknown) => typeof link === "string") &&
+				typeof init.updated === "number")
+		) {
+			throw "invalid " + JSON.stringify(init);
+		}
 		Object.assign(this, init);
 		this.project = project;
 	}
@@ -421,7 +468,7 @@ export class PageListItem {
  * @see Project
  * @see Collaborator
  */
-export interface Member {
+interface Member {
 	/** UUID of user. */
 	id: string;
 	/** name of user. */
@@ -445,7 +492,7 @@ export interface Member {
 }
 
 /** Class representing a Cosense project */
-export class Project {
+class Project {
 	/** Project UUID */
 	id!: string;
 
@@ -530,44 +577,8 @@ export class Project {
 	/** last backuped date. If not loggined, is undefined. */
 	backuped?: number | null;
 
-	/**
-	 * Creates a new project reader.
-	 * @deprecated PLEASE MAKE CLIENT FIRST AND GETTING PROJECT USING `CosenseClient.prototype.getProject()`!
-	 * @param projectName The name of the project (e.g., "example001" if the URL is "https://scrapbox.io/example001").
-	 * @param options Client options for authenticating.
-	 * @returns A Promise that resolves to a Project instance.
-	 */
-	static async new(
-		projectName: string,
-		options: CosenseClientopts,
-	): Promise<Project> {
-		const projectInformation =
-			await (options.alternativeFetch ? options.alternativeFetch : fetch)(
-				(typeof options.urlbase != "undefined"
-					? options.urlbase
-					: "https://scrapbox.io/api/") +
-					"projects/" +
-					encodeURIComponent(projectName),
-				options?.sessionid
-					? {
-						headers: {
-							"Cookie": "connect.sid=" + options.sessionid,
-						},
-					}
-					: {},
-			);
-		if (!projectInformation.ok) {
-			throw new Error(await projectInformation.text());
-		}
-		return new Project(
-			projectName,
-			new CosenseClient(options),
-			await projectInformation.json(),
-		);
-	}
 
 	/** use existing CosenseClient
-	 * PLEASE USE `CosenseClient.prototype.getProject()`
 	 * 	@param projectName The name of the project (e.g., "example001" if the URL is "https://scrapbox.io/example001").
 	 * @param client CosenseClient instance
 	 * @returns A Promise that resolves to a Project instance.
@@ -583,10 +594,64 @@ export class Project {
 		if (!projectInformation.ok) {
 			throw new Error(await projectInformation.text());
 		}
+		const pjjson = await projectInformation.json();
+		if (
+			!(
+				typeof pjjson == "object" &&
+				pjjson != null &&
+				typeof pjjson.id === "string" &&
+				typeof pjjson.name === "string" &&
+				typeof pjjson.displayName === "string" &&
+				typeof pjjson.publicVisible === "boolean" &&
+				Array.isArray(pjjson.loginStrategies) &&
+				pjjson.loginStrategies.every((strategy: unknown) =>
+					typeof strategy === "string"
+				) &&
+				typeof pjjson.theme === "string" &&
+				(pjjson.gyazoTeamsName === null ||
+					typeof pjjson.gyazoTeamsName === "string") &&
+				(pjjson.image === null || typeof pjjson.image === "string") &&
+				typeof pjjson.translation === "boolean" &&
+				typeof pjjson.infobox === "boolean" &&
+				typeof pjjson.created === "number" &&
+				typeof pjjson.updated === "number" &&
+				typeof pjjson.isMember === "boolean" &&
+				(pjjson.plan === undefined || pjjson.plan === null ||
+					typeof pjjson.plan === "string") &&
+				(pjjson.users === undefined || Array.isArray(pjjson.users)) &&
+				(pjjson.admins === undefined ||
+					Array.isArray(pjjson.admins) &&
+						pjjson.admins.every((admin: unknown) =>
+							typeof admin === "string"
+						)) &&
+				(pjjson.owner === undefined ||
+					typeof pjjson.owner === "string") &&
+				(pjjson.trialing === undefined ||
+					typeof pjjson.trialing === "boolean") &&
+				(pjjson.trialMaxPages === undefined ||
+					typeof pjjson.trialMaxPages === "number") &&
+				(pjjson.skipPayment === undefined ||
+					typeof pjjson.skipPayment === "boolean") &&
+				(pjjson.uploadFileTo === undefined ||
+					pjjson.uploadFileTo === "gcs") &&
+				(pjjson.uploadImageTo === undefined ||
+					["gyazo", "gcs"].includes(pjjson.uploadImageTo)) &&
+				(pjjson.emailAddressPatterns === undefined ||
+					Array.isArray(pjjson.emailAddressPatterns) &&
+						pjjson.emailAddressPatterns.every((pattern: unknown) =>
+							typeof pattern === "string"
+						)) &&
+				(pjjson.backuped === undefined || pjjson.backuped === null ||
+					typeof pjjson.backuped === "number")
+			)
+		) {
+			throw new Error(pjjson);
+		}
+
 		return new Project(
 			projectName,
 			client,
-			await projectInformation.json(),
+			pjjson,
 		);
 	}
 
@@ -613,11 +678,17 @@ export class Project {
 						this.name + "/search/titles" +
 						(followId ? "?followingId=" + followId : ""),
 				)).json();
+			if (!Array.isArray(partialPageListResponse)) {
+				throw "/search/titles is not array";
+			}
 			if (partialPageListResponse.length < 2) {
 				return;
 			}
-			followId =
-				partialPageListResponse[partialPageListResponse.length - 1].id;
+			const lastItem = partialPageListResponse.at(-1);
+			if (!lastItem) {
+				throw "";
+			}
+			followId = lastItem.id;
 			for (const e of partialPageListResponse) {
 				yield new PageListItem(e, this);
 			}
@@ -652,7 +723,7 @@ export class Project {
 }
 
 /** Represents a related page to a given page. This includes one-hop and two-hop related pages. */
-export class RelatedPage {
+class RelatedPage {
 	/** ID of the related page */
 	id!: string;
 	/** Title of the related page */
@@ -694,7 +765,7 @@ export class RelatedPage {
 }
 
 /** Class representing a search result for a query */
-export class SearchResult {
+class SearchResult {
 	/** The search query */
 	searchQuery!: string;
 
@@ -742,6 +813,23 @@ export class SearchResult {
 	}
 
 	private constructor(init: SearchResult, project: Project) {
+		if (
+			!(typeof init.searchQuery === "string" &&
+				Array.isArray(init.query?.words) &&
+				Array.isArray(init.query?.excludes) &&
+				[init.limit, init.count].every((val) =>
+					Number.isInteger(val)
+				) &&
+				typeof init.existsExactTitleMatch === "boolean" &&
+				init.backend === "elasticsearch" &&
+				Array.isArray(init.pages) &&
+				init.pages.every((page) =>
+					typeof page.id === "number" &&
+					typeof page.title === "string"
+				))
+		) {
+			throw "invalid data";
+		}
 		Object.assign(this, init);
 		this.project = project;
 		this.pages = init.pages.map((a) => new SearchResultPage(a, this));
@@ -749,7 +837,7 @@ export class SearchResult {
 }
 
 /** Class representing a search result page */
-export class SearchResultPage {
+class SearchResultPage {
 	/** Page ID */
 	id!: string;
 
@@ -768,7 +856,9 @@ export class SearchResultPage {
 	/** The search result this page belongs to */
 	search: SearchResult;
 
-	/** Internal use only */
+	/** Constructor for SearchResultPage using in SearchResult
+	 * @see SearchResult
+	 */
 	constructor(
 		init: SearchResultPage,
 		project: SearchResult,
@@ -782,3 +872,21 @@ export class SearchResultPage {
 		return Page.new(this.title, this.search.project);
 	}
 }
+
+export { CosenseClient };
+export type {
+	Collaborator,
+	CosenseClientopts,
+	LatestPages,
+	LatestPagesInit,
+	LatestPagesPage,
+	Member,
+	Page,
+	PageLine,
+	PageListItem,
+	RelatedPage,
+	RelatedPages,
+	SearchResult,
+	SearchResultPage,
+	Project
+};

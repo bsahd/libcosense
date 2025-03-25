@@ -26,10 +26,11 @@ function alternativeFetch(a) {
     }
     return Promise.resolve(new Response("",{status:404}))
 }
-const a = await libcosense.Project.new("test", {
+const c = libcosense.CosenseClient.new({
 	alternativeFetch,
 	urlbase: "",
-});
+})
+const a = await c.getProject("test");
 console.log(a);
 
 assertEquals(a.id,"Test")
