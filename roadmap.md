@@ -7,7 +7,7 @@
 - `api/pages/:projectname/search/titles`: `Project` クラス内の `pageList` 関数として実装済み
 - below is not yet
 - `api/pages/:projectname/:pagetitle/text`
-  - `Page`クラス内にページテキストを取得する機能はつけたが、この API を呼び出す機能は付けない
+  - `Page`クラス内にページテキストを取得する機能はつけたが、このAPIを呼び出す機能は付けない
 - `api/pages/:projectname/:pagetitle/icon`
 - `api/code/:projectname/:pagetitle/:filename`
 - `api/table/:projectname/:pagetitle/:filename.csv`
