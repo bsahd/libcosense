@@ -230,18 +230,6 @@ class LatestPages {
 	}
 
 	private constructor(init: LatestPages, project: Project) {
-		if (
-			!(([init.skip, init.limit, init.count].every((val) =>
-				Number.isInteger(val)
-			) &&
-				Array.isArray(init.pages)) &&
-				init.pages.some((page) =>
-					!page.id || typeof page.id !== "number" ||
-					typeof page.title !== "string"
-				))
-		) {
-			throw "invalid";
-		}
 		Object.assign(this, init);
 		this.project = project;
 		this.pages = init.pages.map((a) => {
@@ -370,41 +358,6 @@ class Page {
 		init: Page,
 		project: Project,
 	) {
-		if(!(
-			typeof init.id === 'string' &&
-			typeof init.title === 'string' &&
-			(init.image === null || typeof init.image === 'string') &&
-			Array.isArray(init.descriptions) &&
-			init.descriptions.every(desc => typeof desc === 'string') &&
-			typeof init.pin === 'number' &&
-			typeof init.views === 'number' &&
-			typeof init.linked === 'number' &&
-			typeof init.commitId === 'string' &&
-			typeof init.created === 'number' &&
-			typeof init.updated === 'number' &&
-			typeof init.accessed === 'number' &&
-			(init.lastAccessed === undefined || typeof init.lastAccessed === 'number') &&
-			(init.snapshotCreated === null || typeof init.snapshotCreated === 'number') &&
-			typeof init.pageRank === 'number' &&
-			typeof init.snapshotCount === 'number' &&
-			typeof init.persistent === 'boolean' &&
-			Array.isArray(init.lines) &&
-			init.lines.every(line => typeof line === 'object' && line.id && line.text) &&
-			Array.isArray(init.links) &&
-			init.links.every(link => typeof link === 'string') &&
-			Array.isArray(init.icons) &&
-			init.icons.every(icon => typeof icon === 'string') &&
-			Array.isArray(init.files) &&
-			init.files.every(file => typeof file === 'string') &&
-			typeof init.relatedPages === 'object' &&
-			Array.isArray(init.collaborators) &&
-			init.collaborators.every(collab => typeof collab === 'object') &&
-			typeof init.project === 'object' &&
-			typeof init.project.id === 'number' &&
-			typeof init.project.name === 'string'
-		  )){
-			throw "invalid";
-		  }
 		Object.assign(this, init);
 		this.project = project;
 		this.relatedPages.links1hop = init.relatedPages.links1hop.map(
@@ -442,15 +395,6 @@ class PageListItem {
 	 * @param project The project this page list item belongs to
 	 */
 	constructor(init: PageListItem, project: Project) {
-		if (
-			!(typeof init.id === "string" &&
-				typeof init.title === "string" &&
-				Array.isArray(init.links) &&
-				init.links.every((link: unknown) => typeof link === "string") &&
-				typeof init.updated === "number")
-		) {
-			throw "invalid " + JSON.stringify(init);
-		}
 		Object.assign(this, init);
 		this.project = project;
 	}
@@ -813,23 +757,6 @@ class SearchResult {
 	}
 
 	private constructor(init: SearchResult, project: Project) {
-		if (
-			!(typeof init.searchQuery === "string" &&
-				Array.isArray(init.query?.words) &&
-				Array.isArray(init.query?.excludes) &&
-				[init.limit, init.count].every((val) =>
-					Number.isInteger(val)
-				) &&
-				typeof init.existsExactTitleMatch === "boolean" &&
-				init.backend === "elasticsearch" &&
-				Array.isArray(init.pages) &&
-				init.pages.every((page) =>
-					typeof page.id === "number" &&
-					typeof page.title === "string"
-				))
-		) {
-			throw "invalid data";
-		}
 		Object.assign(this, init);
 		this.project = project;
 		this.pages = init.pages.map((a) => new SearchResultPage(a, this));
