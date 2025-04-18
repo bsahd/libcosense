@@ -539,59 +539,6 @@ class Project {
 			throw new Error(await projectInformation.text());
 		}
 		const pjjson = await projectInformation.json();
-		if (
-			!(
-				typeof pjjson == "object" &&
-				pjjson != null &&
-				typeof pjjson.id === "string" &&
-				typeof pjjson.name === "string" &&
-				typeof pjjson.displayName === "string" &&
-				typeof pjjson.publicVisible === "boolean" &&
-				Array.isArray(pjjson.loginStrategies) &&
-				pjjson.loginStrategies.every((strategy: unknown) =>
-					typeof strategy === "string"
-				) &&
-				typeof pjjson.theme === "string" &&
-				(pjjson.gyazoTeamsName === null ||
-					typeof pjjson.gyazoTeamsName === "string") &&
-				(pjjson.image === null || typeof pjjson.image === "string") &&
-				typeof pjjson.translation === "boolean" &&
-				typeof pjjson.infobox === "boolean" &&
-				typeof pjjson.created === "number" &&
-				typeof pjjson.updated === "number" &&
-				typeof pjjson.isMember === "boolean" &&
-				(pjjson.plan === undefined || pjjson.plan === null ||
-					typeof pjjson.plan === "string") &&
-				(pjjson.users === undefined || Array.isArray(pjjson.users)) &&
-				(pjjson.admins === undefined ||
-					Array.isArray(pjjson.admins) &&
-						pjjson.admins.every((admin: unknown) =>
-							typeof admin === "string"
-						)) &&
-				(pjjson.owner === undefined ||
-					typeof pjjson.owner === "string") &&
-				(pjjson.trialing === undefined ||
-					typeof pjjson.trialing === "boolean") &&
-				(pjjson.trialMaxPages === undefined ||
-					typeof pjjson.trialMaxPages === "number") &&
-				(pjjson.skipPayment === undefined ||
-					typeof pjjson.skipPayment === "boolean") &&
-				(pjjson.uploadFileTo === undefined ||
-					pjjson.uploadFileTo === "gcs") &&
-				(pjjson.uploadImageTo === undefined ||
-					["gyazo", "gcs"].includes(pjjson.uploadImageTo)) &&
-				(pjjson.emailAddressPatterns === undefined ||
-					Array.isArray(pjjson.emailAddressPatterns) &&
-						pjjson.emailAddressPatterns.every((pattern: unknown) =>
-							typeof pattern === "string"
-						)) &&
-				(pjjson.backuped === undefined || pjjson.backuped === null ||
-					typeof pjjson.backuped === "number")
-			)
-		) {
-			throw new Error(pjjson);
-		}
-
 		return new Project(
 			projectName,
 			client,
