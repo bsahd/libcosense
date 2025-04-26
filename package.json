@@ -1,6 +1,5 @@
 {
-  "name": "libcosense",
-  "private": true,
+  "name": "@bsahd/libcosense",
   "main": "mod.ts",
   "keywords": [],
   "author": "bsahd",
@@ -13,5 +12,8 @@
   "dependencies": {
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  }
+  },
+  "publishConfig": {
+  "registry": "https://npm.pkg.github.com"
+}
 }
