@@ -1,19 +1,20 @@
 {
-  "name": "@bsahd/libcosense",
-  "main": "mod.ts",
-  "keywords": [],
-  "author": "bsahd",
-  "license": "MIT",
-  "type": "module",
-  "devDependencies": {
-    "@types/node": "^22.13.14",
-    "jsr": "^0.13.4"
-  },
-  "dependencies": {
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
-  },
-  "publishConfig": {
-  "registry": "https://npm.pkg.github.com"
-}
+	"name": "@bsahd/libcosense",
+	"main": "mod.ts",
+	"keywords": [],
+	"author": "bsahd",
+	"license": "MIT",
+	"type": "module",
+	"exports":"./mod.js",
+	"devDependencies": {
+		"@types/node": "^22.13.14",
+		"jsr": "^0.13.4"
+	},
+	"dependencies": {
+		"tsx": "^4.19.3",
+		"typescript": "^5.8.2"
+	},
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com"
+	}
 }

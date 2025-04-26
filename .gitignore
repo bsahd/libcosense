@@ -1,4 +1,6 @@
 #for local document test
 /docs
 /test-realenv.ts
+/test-realenv.js
+/test-realenv.d.ts
 /node_modules
