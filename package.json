@@ -5,7 +5,7 @@
 	"author": "bsahd",
 	"license": "MIT",
 	"type": "module",
-	"exports":"./mod.js",
+	"exports": "./mod.js",
 	"devDependencies": {
 		"@types/node": "^22.13.14",
 		"jsr": "^0.13.4"
@@ -16,5 +16,6 @@
 	},
 	"publishConfig": {
 		"registry": "https://npm.pkg.github.com"
-	}
+	},
+	"version": "2.0.3"
 }
