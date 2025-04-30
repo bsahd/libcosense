@@ -41,11 +41,11 @@ class CosenseClient implements CosenseClientopts {
 			this.urlbase + url,
 			usesessid
 				? {
-					headers: {
-						"Cookie": "connect.sid=" + this.sessionid,
-					},
-					...options,
-				}
+						headers: {
+							Cookie: "connect.sid=" + this.sessionid,
+						},
+						...options,
+					}
 				: options,
 		);
 	}
@@ -58,7 +58,6 @@ class CosenseClient implements CosenseClientopts {
 	getProject(projectName: string): Promise<Project> {
 		return Project.useClient(projectName, this);
 	}
-
 }
 /** Options for the Cosense client */
 interface CosenseClientopts {
@@ -212,19 +211,17 @@ class LatestPages {
 		project: Project,
 	): Promise<LatestPages> {
 		return new LatestPages(
-			await (await project.client.fetch(
-				"pages/" +
-					project.name + "/?" +
-					options.limit
-					? "limit=" + options.limit + "&"
-					: "" +
-							options.skip
-					? "skip=" + options.skip + "&"
-					: "" +
-							options.sort
-					? "sort=" + options.sort + "&"
-					: "",
-			)).json(),
+			await (
+				await project.client.fetch(
+					"pages/" + project.name + "/?" + options.limit
+						? "limit=" + options.limit + "&"
+						: "" + options.skip
+							? "skip=" + options.skip + "&"
+							: "" + options.sort
+								? "sort=" + options.sort + "&"
+								: "",
+				)
+			).json(),
 			project,
 		);
 	}
@@ -337,14 +334,13 @@ class Page {
 	 * @param project The project to which the page belongs
 	 * @returns A promise that resolves to a new Page instance
 	 */
-	static async new(
-		pageName: string,
-		project: Project,
-	): Promise<Page> {
+	static async new(pageName: string, project: Project): Promise<Page> {
 		return new Page(
-			await (await project.client.fetch(
-				`pages/${project.name}/${encodeURIComponent(pageName)}`,
-			)).json(),
+			await (
+				await project.client.fetch(
+					`pages/${project.name}/${encodeURIComponent(pageName)}`,
+				)
+			).json(),
 			project,
 		);
 	}
@@ -354,10 +350,7 @@ class Page {
 	 * @param init The initial data for the page
 	 * @param project The project to which the page belongs
 	 */
-	private constructor(
-		init: Page,
-		project: Project,
-	) {
+	private constructor(init: Page, project: Project) {
 		Object.assign(this, init);
 		this.project = project;
 		this.relatedPages.links1hop = init.relatedPages.links1hop.map(
@@ -521,7 +514,6 @@ class Project {
 	/** last backuped date. If not loggined, is undefined. */
 	backuped?: number | null;
 
-
 	/** use existing CosenseClient
 	 * 	@param projectName The name of the project (e.g., "example001" if the URL is "https://scrapbox.io/example001").
 	 * @param client CosenseClient instance
@@ -532,18 +524,13 @@ class Project {
 		client: CosenseClient,
 	): Promise<Project> {
 		const projectInformation = await client.fetch(
-			"projects/" +
-				encodeURIComponent(projectName),
+			"projects/" + encodeURIComponent(projectName),
 		);
 		if (!projectInformation.ok) {
 			throw new Error(await projectInformation.text());
 		}
 		const pjjson = await projectInformation.json();
-		return new Project(
-			projectName,
-			client,
-			pjjson,
-		);
+		return new Project(projectName, client, pjjson);
 	}
 
 	private constructor(
@@ -563,12 +550,14 @@ class Project {
 	async *pageList(): AsyncGenerator<PageListItem, void, unknown> {
 		let followId: string | null = null;
 		while (true) {
-			const partialPageListResponse: PageListItem[] =
-				await (await this.client.fetch(
+			const partialPageListResponse: PageListItem[] = await (
+				await this.client.fetch(
 					"pages/" +
-						this.name + "/search/titles" +
+						this.name +
+						"/search/titles" +
 						(followId ? "?followingId=" + followId : ""),
-				)).json();
+				)
+			).json();
 			if (!Array.isArray(partialPageListResponse)) {
 				throw "/search/titles is not array";
 			}
@@ -690,15 +679,16 @@ class SearchResult {
 	 * @param project The project to search within.
 	 * @returns A Promise that resolves to the search result.
 	 */
-	static async new(
-		query: string,
-		project: Project,
-	): Promise<SearchResult> {
+	static async new(query: string, project: Project): Promise<SearchResult> {
 		return new SearchResult(
-			await (await project.client.fetch(
-				"pages/" + project.name +
-					"/search/query?q=" + encodeURIComponent(query),
-			)).json(),
+			await (
+				await project.client.fetch(
+					"pages/" +
+						project.name +
+						"/search/query?q=" +
+						encodeURIComponent(query),
+				)
+			).json(),
 			project,
 		);
 	}
@@ -733,10 +723,7 @@ class SearchResultPage {
 	/** Constructor for SearchResultPage using in SearchResult
 	 * @see SearchResult
 	 */
-	constructor(
-		init: SearchResultPage,
-		project: SearchResult,
-	) {
+	constructor(init: SearchResultPage, project: SearchResult) {
 		Object.assign(this, init);
 		this.search = project;
 	}
@@ -762,5 +749,5 @@ export type {
 	RelatedPages,
 	SearchResult,
 	SearchResultPage,
-	Project
+	Project,
 };

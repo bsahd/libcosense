@@ -1,4 +1,5 @@
 [日本語版](CONTRIBUTING.ja.md)
+
 ## 1. How to contribute to the project
 
 ### Reporting a bug
@@ -69,4 +70,5 @@ deno run test.js
 
 - If you add a function, please reflect it in the tests.
 - Test coverage is still low, so contributions to improve the tests are also welcome.
+
 # Japanese
