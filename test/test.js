@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import * as libcosense from "./mod.ts";
+import * as libcosense from "../mod.ts";
 function alternativeFetch(a) {
 	console.log(a);
 	if (a == "projects/test") {
