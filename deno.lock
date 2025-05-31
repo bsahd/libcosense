@@ -1,0 +1,31 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@hono/hono@*": "4.7.10",
+    "jsr:@std/assert@*": "1.0.12",
+    "jsr:@std/internal@^1.0.6": "1.0.8"
+  },
+  "jsr": {
+    "@hono/hono@4.7.10": {
+      "integrity": "e59029e252af371abe43e8e4f9a115e38974c6bd5972022372bf89f763269cc7"
+    },
+    "@std/assert@1.0.12": {
+      "integrity": "08009f0926dda9cbd8bef3a35d3b6a4b964b0ab5c3e140a4e0351fbf34af5b9a",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.8": {
+      "integrity": "fc66e846d8d38a47cffd274d80d2ca3f0de71040f855783724bb6b87f60891f5"
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@types/node@^22.13.14",
+        "npm:tsx@^4.19.3",
+        "npm:typescript@^5.8.2"
+      ]
+    }
+  }
+}

@@ -3,10 +3,7 @@
 class CosenseClient implements CosenseClientopts {
 	sessionid?: string;
 	allowediting?: boolean;
-	alternativeFetch?: (
-		input: RequestInfo | URL,
-		init?: RequestInit,
-	) => Promise<Response>;
+	alternativeFetch?: (request: Request) => Promise<Response> | Response;
 	urlbase: string;
 
 	/**
@@ -32,22 +29,16 @@ class CosenseClient implements CosenseClientopts {
 	 * @param options The fetch options.
 	 * @returns A Promise resolved with the fetch Response.
 	 */
-	async fetch(
-		url: RequestInfo | URL,
-		options?: RequestInit,
-	): Promise<Response> {
+	fetch(
+		url: string | URL,
+		options?: RequestInit
+	): Promise<Response> | Response {
 		const usesessid = !CosenseClient.detectBrowser() && this.sessionid;
-		return await (this.alternativeFetch ? this.alternativeFetch : fetch)(
-			this.urlbase + url,
-			usesessid
-				? {
-						headers: {
-							Cookie: "connect.sid=" + this.sessionid,
-						},
-						...options,
-					}
-				: options,
-		);
+		const req = new Request(this.urlbase + url, options);
+		if (usesessid) {
+			req.headers.set("Cookie", "connect.sid=" + this.sessionid);
+		}
+		return (this.alternativeFetch ? this.alternativeFetch : fetch)(req);
 	}
 
 	/**
@@ -76,10 +67,7 @@ interface CosenseClientopts {
 	/**
 	 * If defined, use alternativeFetch instead of the default fetch.
 	 */
-	alternativeFetch?: (
-		input: RequestInfo | URL,
-		init?: RequestInit,
-	) => Promise<Response>;
+	alternativeFetch?: (request: Request) => Promise<Response> | Response;
 
 	/** Base URL for the API */
 	urlbase?: string;
@@ -208,7 +196,7 @@ class LatestPages {
 	 */
 	static async new(
 		options: LatestPagesInit,
-		project: Project,
+		project: Project
 	): Promise<LatestPages> {
 		return new LatestPages(
 			await (
@@ -216,13 +204,13 @@ class LatestPages {
 					"pages/" + project.name + "/?" + options.limit
 						? "limit=" + options.limit + "&"
 						: "" + options.skip
-							? "skip=" + options.skip + "&"
-							: "" + options.sort
-								? "sort=" + options.sort + "&"
-								: "",
+						? "skip=" + options.skip + "&"
+						: "" + options.sort
+						? "sort=" + options.sort + "&"
+						: ""
 				)
 			).json(),
-			project,
+			project
 		);
 	}
 
@@ -338,10 +326,10 @@ class Page {
 		return new Page(
 			await (
 				await project.client.fetch(
-					`pages/${project.name}/${encodeURIComponent(pageName)}`,
+					`pages/${project.name}/${encodeURIComponent(pageName)}`
 				)
 			).json(),
-			project,
+			project
 		);
 	}
 
@@ -354,10 +342,10 @@ class Page {
 		Object.assign(this, init);
 		this.project = project;
 		this.relatedPages.links1hop = init.relatedPages.links1hop.map(
-			(relatedItem) => new RelatedPage(relatedItem, this),
+			(relatedItem) => new RelatedPage(relatedItem, this)
 		);
 		this.relatedPages.links2hop = init.relatedPages.links2hop.map(
-			(relatedItem) => new RelatedPage(relatedItem, this),
+			(relatedItem) => new RelatedPage(relatedItem, this)
 		);
 	}
 
@@ -521,10 +509,10 @@ class Project {
 	 */
 	static async useClient(
 		projectName: string,
-		client: CosenseClient,
+		client: CosenseClient
 	): Promise<Project> {
 		const projectInformation = await client.fetch(
-			"projects/" + encodeURIComponent(projectName),
+			"projects/" + encodeURIComponent(projectName)
 		);
 		if (!projectInformation.ok) {
 			throw new Error(await projectInformation.text());
@@ -536,7 +524,7 @@ class Project {
 	private constructor(
 		name: string,
 		client: CosenseClient,
-		projectInfo: Project,
+		projectInfo: Project
 	) {
 		this.client = client;
 		this.name = name;
@@ -555,7 +543,7 @@ class Project {
 					"pages/" +
 						this.name +
 						"/search/titles" +
-						(followId ? "?followingId=" + followId : ""),
+						(followId ? "?followingId=" + followId : "")
 				)
 			).json();
 			if (!Array.isArray(partialPageListResponse)) {
@@ -686,10 +674,10 @@ class SearchResult {
 					"pages/" +
 						project.name +
 						"/search/query?q=" +
-						encodeURIComponent(query),
+						encodeURIComponent(query)
 				)
 			).json(),
-			project,
+			project
 		);
 	}
 
