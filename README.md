@@ -15,7 +15,7 @@ objective cosense rest wrapper
 
 1. add dependency
    - on **Deno**-based project: `deno add jsr:@bsahd/libcosense`
-   - on **npm**-based project: `npx jsr add @bsahd/libcosense`
+   - npm is not supported
 2. importing in source-code
    ```ts
    import * as libcosense from "@bsahd/libcosense";
@@ -27,7 +27,8 @@ objective cosense rest wrapper
 
 ```ts
 import * as libcosense from "jsr:@bsahd/libcosense";
-const pj = libcosense.Project.new("<Project name>");
+const cosense = new libcosense.CosenseClient();
+const pj = cosense.getProject("<Project name>");
 pj.getPage("<Page name>");
 ```
 
@@ -35,7 +36,8 @@ pj.getPage("<Page name>");
 
 ```ts
 import * as libcosense from "jsr:@bsahd/libcosense";
-const pj = libcosense.Project.new("<Project name>");
+const cosense = new libcosense.CosenseClient();
+const pj = cosense.getProject("<Project name>");
 for await (const item of pj.pageList()) {
 	const page = await item.getDetail();
 	console.log(page);
