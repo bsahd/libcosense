@@ -31,7 +31,7 @@ class CosenseClient implements CosenseClientopts {
 	 */
 	fetch(
 		url: string | URL,
-		options?: RequestInit
+		options?: RequestInit,
 	): Promise<Response> | Response {
 		const usesessid = !CosenseClient.detectBrowser() && this.sessionid;
 		const req = new Request(this.urlbase + url, options);
@@ -48,6 +48,9 @@ class CosenseClient implements CosenseClientopts {
 	 */
 	getProject(projectName: string): Promise<Project> {
 		return Project.useClient(projectName, this);
+	}
+	toJSON() {
+		return { ...this, sessionid: undefined };
 	}
 }
 /** Options for the Cosense client */
@@ -95,7 +98,7 @@ interface LatestPagesInit {
 	 * - "title"
 	 * - "updatedbyMe"
 	 */
-	sort:
+	sort?:
 		| "updated"
 		| "created"
 		| "accessed"
@@ -195,22 +198,21 @@ class LatestPages {
 	 * @returns A Promise that resolves to the latest pages result.
 	 */
 	static async new(
-		options: LatestPagesInit,
-		project: Project
+		options: LatestPagesInit = {},
+		project: Project,
 	): Promise<LatestPages> {
 		return new LatestPages(
 			await (
 				await project.client.fetch(
-					"pages/" + project.name + "/?" + options.limit
-						? "limit=" + options.limit + "&"
-						: "" + options.skip
-						? "skip=" + options.skip + "&"
-						: "" + options.sort
-						? "sort=" + options.sort + "&"
-						: ""
+					"pages/" +
+						project.name +
+						"/?" +
+						("limit" in options ? "limit=" + options.limit + "&" : "") +
+						("skip" in options ? "skip=" + options.skip + "&" : "") +
+						("sort" in options ? "sort=" + options.sort + "&" : ""),
 				)
 			).json(),
-			project
+			project,
 		);
 	}
 
@@ -326,10 +328,10 @@ class Page {
 		return new Page(
 			await (
 				await project.client.fetch(
-					`pages/${project.name}/${encodeURIComponent(pageName)}`
+					`pages/${project.name}/${encodeURIComponent(pageName)}`,
 				)
 			).json(),
-			project
+			project,
 		);
 	}
 
@@ -342,10 +344,10 @@ class Page {
 		Object.assign(this, init);
 		this.project = project;
 		this.relatedPages.links1hop = init.relatedPages.links1hop.map(
-			(relatedItem) => new RelatedPage(relatedItem, this)
+			(relatedItem) => new RelatedPage(relatedItem, this),
 		);
 		this.relatedPages.links2hop = init.relatedPages.links2hop.map(
-			(relatedItem) => new RelatedPage(relatedItem, this)
+			(relatedItem) => new RelatedPage(relatedItem, this),
 		);
 	}
 
@@ -509,10 +511,10 @@ class Project {
 	 */
 	static async useClient(
 		projectName: string,
-		client: CosenseClient
+		client: CosenseClient,
 	): Promise<Project> {
 		const projectInformation = await client.fetch(
-			"projects/" + encodeURIComponent(projectName)
+			"projects/" + encodeURIComponent(projectName),
 		);
 		if (!projectInformation.ok) {
 			throw new Error(await projectInformation.text());
@@ -524,7 +526,7 @@ class Project {
 	private constructor(
 		name: string,
 		client: CosenseClient,
-		projectInfo: Project
+		projectInfo: Project,
 	) {
 		this.client = client;
 		this.name = name;
@@ -543,7 +545,7 @@ class Project {
 					"pages/" +
 						this.name +
 						"/search/titles" +
-						(followId ? "?followingId=" + followId : "")
+						(followId ? "?followingId=" + followId : ""),
 				)
 			).json();
 			if (!Array.isArray(partialPageListResponse)) {
@@ -674,10 +676,10 @@ class SearchResult {
 					"pages/" +
 						project.name +
 						"/search/query?q=" +
-						encodeURIComponent(query)
+						encodeURIComponent(query),
 				)
 			).json(),
-			project
+			project,
 		);
 	}
 
