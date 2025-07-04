@@ -49,7 +49,7 @@ class CosenseClient implements CosenseClientopts {
 	getProject(projectName: string): Promise<Project> {
 		return Project.useClient(projectName, this);
 	}
-	toJSON() {
+	toJSON(): CosenseClient {
 		return { ...this, sessionid: undefined };
 	}
 }
