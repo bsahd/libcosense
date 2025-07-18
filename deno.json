@@ -1,6 +1,6 @@
 {
-	"name": "@bsahd/libcosense",
-	"version": "2.1.2",
-	"exports": "./mod.ts",
-	"license": "MIT"
+  "name": "@bsahd/libcosense",
+  "version": "2.1.2",
+  "exports": "./mod.ts",
+  "license": "MIT"
 }

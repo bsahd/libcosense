@@ -39,7 +39,7 @@ import * as libcosense from "jsr:@bsahd/libcosense";
 const cosense = new libcosense.CosenseClient();
 const pj = cosense.getProject("<Project name>");
 for await (const item of pj.pageList()) {
-	const page = await item.getDetail();
-	console.log(page);
+  const page = await item.getDetail();
+  console.log(page);
 }
 ```
